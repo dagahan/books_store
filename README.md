@@ -1,0 +1,1 @@
+Project books-shop is pet project maded to improve my skills with SQL and espessially sqlAlchemy orm.
