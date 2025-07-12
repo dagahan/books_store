@@ -1,0 +1,29 @@
+[project]
+name = "myproject"
+version = "0.1.0"
+requires-python = "==3.13.5"
+dependencies = [
+    "loguru==0.7.3",
+    "colorama==0.4.6",
+    "SQLAlchemy==2.0.41",
+    "psycopg[binary]",
+    "alembic==1.12.0",
+    "pydantic==2.11.7",
+    "fastapi==0.116.0",
+    "uvicorn==0.35.0",
+    "chardet==5.2.0",    
+    "python-dotenv==1.1.0",
+]
+
+
+[tool.ruff]
+line-length = 88
+
+
+[tool.ruff.lint]
+extend-select = ["W", "N", "R", "I"]
+# Letters means included rules classes from PEP8
+ignore = ["W293"]
+
+
+[alchemy]
