@@ -2,8 +2,10 @@ import asyncio
 import uvicorn
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
+from loguru import logger
 
 from src.core.utils import EnvTools
+from src.services.database import DataBase
 
 
 class User(BaseModel):
@@ -15,6 +17,7 @@ class User(BaseModel):
 
 class Server:
     def __init__(self) -> None:
+        self.data_base = DataBase()
         self.app = FastAPI(
             title="Simple Web Service",
             description="Пример веб-приложения на FastAPI",
@@ -36,6 +39,10 @@ class Server:
     
     async def run_server(self):
         server = uvicorn.Server(self.uvicorn_config)
+        self.data_base.init_alchemy_engine()
+        
+        logger.info(self.data_base.engine)
+
         await server.serve()
 
 
