@@ -2,20 +2,20 @@ name: alchemy
 
 
 services:
-  main:
-    build:
-      context: ./main
-      dockerfile: dockerfile
-    image: main
-    container_name: main
-    env_file: .env
-    environment:
-      RUNNING_INSIDE_DOCKER: 1
-    ports:
-      - "${MAIN_PORT}:${MAIN_PORT}"
-    networks:
-      - alchemy_net
-    restart: ${DOCKER_CONTAINERS_RESTART}
+  # server:
+  #   build:
+  #     context: ./server
+  #     dockerfile: dockerfile
+  #   image: server
+  #   container_name: server
+  #   env_file: .env
+  #   environment:
+  #     RUNNING_INSIDE_DOCKER: 1
+  #   ports:
+  #     - "${SERVER_PORT}:${SERVER_PORT}"
+  #   networks:
+  #     - alchemy_net
+  #   restart: ${DOCKER_CONTAINERS_RESTART}
 
 
   postgres:
