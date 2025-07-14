@@ -13,6 +13,12 @@ dependencies = [
     "uvicorn==0.35.0",
     "chardet==5.2.0",    
     "python-dotenv==1.1.0",
+    "Authlib==0.14.3",
+    "itsdangerous==1.1.0",
+    "Jinja2==2.11.3",
+    "passlib==1.7.2",
+    "bcrypt==3.2.0",
+    "pyjwt==1.7.1",
 ]
 
 
