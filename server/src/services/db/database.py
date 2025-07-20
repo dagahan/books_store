@@ -3,6 +3,7 @@ from sqlalchemy import create_engine, engine, text
 
 from src.core.config import ConfigLoader
 from src.core.utils import EnvTools
+from src.services.db.models import *
 
 
 class DataBase:
@@ -15,6 +16,7 @@ class DataBase:
         self.db_pwd = EnvTools.load_env_var("POSTGRES_PASSWORD")
         self.db_name = EnvTools.load_env_var("POSTGRES_DB")
         self.engine_config = f"postgresql+psycopg://{self.db_user}:{self.db_pwd}@{self.db_host}:{self.db_port}/{self.db_name}"
+
 
 
     def init_alchemy_engine(self,) -> None:
@@ -36,3 +38,7 @@ class DataBase:
             result = conn.execute(text("SELECT VERSION()")).all()[0][0]
             logger.debug(result)
             return result.startswith("PostgreSQL")
+
+    
+    def create_tables(self,) -> None:
+        metadata_object.create_all(self.engine)
