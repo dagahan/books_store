@@ -1,14 +1,16 @@
 from loguru import logger
-from sqlalchemy import create_engine, engine, text
+from sqlalchemy import create_engine, engine, text, inspect
+import colorama
 
 from src.core.config import ConfigLoader
 from src.core.utils import EnvTools
-from src.services.db.models import *
+from src.services.db.models import DataBaseTables
 
 
 class DataBase:
     def __init__(self,) -> None:
         self.config = ConfigLoader()
+        self.metadata_object = DataBaseTables().metadata_object
         self.engine = None
         self.db_host = EnvTools.load_env_var("POSTGRES_HOST")
         self.db_port = EnvTools.load_env_var("POSTGRES_PORT")
@@ -29,7 +31,9 @@ class DataBase:
         )
 
         if self.test_connection(self.engine):
-            logger.info(f"Connection with data base has been established!")
+            logger.info(f"{colorama.Fore.GREEN}Connection with data base has been established!")
+        else:
+            raise Exception(f"{colorama.Fore.RED}Cannot establish connection with data base.")
         
 
     def test_connection(self, engine: engine,) -> bool: 
@@ -41,4 +45,16 @@ class DataBase:
 
     
     def create_tables(self,) -> None:
-        metadata_object.create_all(self.engine)
+        self.metadata_object.create_all(self.engine)
+
+
+    def drop_tables(self,) -> None:
+        if self.engine.dialect.name == 'postgresql':
+            with self.engine.begin() as conn:
+                # Get all table names in dependency order
+                tables = inspect(conn).get_table_names()
+                # Drop all with CASCADE
+                for table in reversed(tables):
+                    conn.execute(text(f'DROP TABLE IF EXISTS "{table}" CASCADE'))
+        else:
+            self.metadata_object.drop_all(self.engine)
