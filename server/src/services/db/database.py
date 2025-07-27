@@ -8,7 +8,6 @@ from sqlalchemy import (
 
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncEngine, async_sessionmaker, AsyncSession
 from sqlalchemy.orm import Session, sessionmaker
-from sqlalchemy.pool import NullPool
 
 import colorama
 
@@ -27,6 +26,7 @@ class DataBase:
         self.db_pwd = EnvTools.load_env_var("POSTGRES_PASSWORD")
         self.db_name = EnvTools.load_env_var("POSTGRES_DB")
         self.engine_config = f"postgresql+asyncpg://{self.db_user}:{self.db_pwd}@{self.db_host}:{self.db_port}/{self.db_name}"
+        self.async_session = None
 
 
 
@@ -35,51 +35,61 @@ class DataBase:
         self.engine = create_async_engine(
             url=self.engine_config,
             echo=self.config.get("db", "echo"),
-            poolclass=NullPool,  # Отключаем пул соединений для asyncpg
-            future=True,  # Используем новый стиль SQLAlchemy 2.0
-            connect_args={
-                "timeout": 10,  # Таймаут подключения (секунды)
-                "command_timeout": 30,  # Таймаут выполнения запросов
-                "server_settings": {
-                    "application_name": "myapp_ctl"
-                }
-            }
+            pool_size=10, # count of active connections in pool
+            max_overflow=20, # max amount of connections
+            pool_timeout=15,
+            pool_recycle=1800,
+            pool_pre_ping=True,
+            future=True,
         )
 
-        if await self.test_connection(self.engine):
+        self.async_session = async_sessionmaker(
+            self.engine, 
+            expire_on_commit=False,
+            class_=AsyncSession
+        )
+
+        if await self.test_connection():
             logger.info(f"{colorama.Fore.GREEN}Connection with data base has been established!")
         else:
             raise Exception(f"{colorama.Fore.RED}Cannot establish connection with data base.")
         
 
-    async def test_connection(self, engine: engine,) -> bool: 
+    async def test_connection(self) -> bool: 
         try:
-            async with self.engine.connect() as conn:
-                result = await conn.execute(text("SELECT 1"))
+            async with self.async_session() as session:
+                result = await session.execute(text("SELECT 1"))
                 return result.scalar() == 1
-        except Exception as e:
-            logger.error(f"Database connection failed: {e}")
+
+        except Exception as ex:
+            logger.error(f"Database connection failed: {ex}")
             return False
 
     
     async def create_tables(self,) -> None:
-        if not self.engine:
-            raise RuntimeError("Database engine not initialized")
-        async with self.engine.connect() as conn:
-            await conn.run_sync(Base.metadata.create_all)
-            await conn.commit()
-        logger.success("All tables created successfully")
+        try:
+            async with self.engine.connect() as conn:
+                await conn.run_sync(Base.metadata.create_all)
+                await conn.commit()
+            logger.success("All tables created successfully")
+
+        except Exception as ex:
+            logger.error(f"Failed to create all tables from models: {ex}")
 
 
     async def drop_all_tables(self,) -> None:
-        async with self.engine.connect() as conn:
-            result = await conn.execute(text(
-                    "SELECT tablename FROM pg_tables WHERE schemaname = 'public'"))
-            tables = [row[0] for row in result]
+        try:
+            async with self.engine.connect() as conn:
+                await conn.run_sync(Base.metadata.drop_all)
             
-            for table in tables:
-                await conn.execute(text(f'DROP TABLE IF EXISTS "{table}" CASCADE'))
-            
-            await conn.execute(text(
-                "DROP TYPE IF EXISTS payment_method_enum, deliveries_status_enum, delivery_groups_status_enum CASCADE"))
-            await conn.commit()
+                await conn.execute(text(
+                    "DROP TYPE IF EXISTS payment_method_enum, "
+                    "deliveries_status_enum, "
+                    "delivery_groups_status_enum CASCADE"
+                ))
+
+                await conn.commit()
+        
+        except Exception as ex:
+            logger.error(f"Failed to drop all tables: {ex}")
+        

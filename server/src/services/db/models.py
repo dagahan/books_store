@@ -92,7 +92,7 @@ class PurchaseItem(Base):
     purchase_id: Mapped[UUID] = mapped_column(ForeignKey('purchases.id'), primary_key=True)
     product_type_id: Mapped[UUID] = mapped_column(ForeignKey('product_types.id'), primary_key=True)
     quantity: Mapped[int] = mapped_column(Integer, nullable=False)
-    unit_cost: Mapped[float] = mapped_column(Numeric(10, 2))
+    unit_cost: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
     
     purchase: Mapped["Purchase"] = relationship("Purchase", back_populates='items')
     product_type: Mapped["ProductType"] = relationship("ProductType", back_populates='purchase_items')
@@ -102,7 +102,7 @@ class Delivery(Base):
     __tablename__ = "deliveries"
     
     id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    product_id: Mapped[UUID] = mapped_column(ForeignKey('products.id'))
+    product_id: Mapped[UUID] = mapped_column(ForeignKey('products.id'), nullable=False)
     status: Mapped[DeliveryStatusEnum] = mapped_column(Enum(DeliveryStatusEnum), nullable=False)
     
     product: Mapped["Product"] = relationship("Product", back_populates='deliveries')
@@ -112,8 +112,8 @@ class DeliveryGroup(Base):
     __tablename__ = "delivery_groups"
     
     id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    target_warehouse_id: Mapped[UUID] = mapped_column(ForeignKey('warehouses.id'))
-    target_user_id: Mapped[UUID] = mapped_column(ForeignKey('users.id'))
+    target_warehouse_id: Mapped[UUID] = mapped_column(ForeignKey('warehouses.id'), nullable=False)
+    target_user_id: Mapped[UUID] = mapped_column(ForeignKey('users.id'), nullable=False)
     status: Mapped[DeliveryGroupStatusEnum] = mapped_column(Enum(DeliveryGroupStatusEnum), nullable=False)
     
     target_warehouse: Mapped["Warehouse"] = relationship("Warehouse", back_populates='delivery_groups')
@@ -134,7 +134,7 @@ class Seller(Base):
     __tablename__ = "sellers"
     
     id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    user_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey('users.id'))
+    user_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True, nullable=False), ForeignKey('users.id', ondelete='CASCADE'))
     name: Mapped[str] = mapped_column(String(128), nullable=False)
     
     product_types: Mapped[list["ProductType"]] = relationship("ProductType", back_populates='seller')
