@@ -32,4 +32,7 @@ extend-select = ["W", "N", "R", "I"]
 ignore = ["W293"]
 
 
-[alchemy]
+[db]
+echo = true
+pool_size = 5
+max_overflow = 10

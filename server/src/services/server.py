@@ -40,7 +40,7 @@ class Server:
     async def run_server(self):
         server = uvicorn.Server(self.uvicorn_config)
         self.data_base.init_alchemy_engine()
-        self.data_base.drop_tables() # dropping all of tables and data.
+        # self.data_base.drop_all_tables() # dropping all of tables and data.
         self.data_base.create_tables()
 
         logger.info(self.data_base.engine)

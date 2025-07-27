@@ -1,5 +1,12 @@
 from loguru import logger
-from sqlalchemy import create_engine, engine, text, inspect
+from sqlalchemy import (
+    create_engine,
+    engine,
+    text,
+    inspect,
+    insert,
+)
+
 import colorama
 
 from src.core.config import ConfigLoader
@@ -25,9 +32,9 @@ class DataBase:
         logger.info(f"Starting service..")
         self.engine = create_engine(
             url=self.engine_config,
-            echo=True,
-            pool_size=5,
-            max_overflow=10,
+            echo=self.config.get("db", "echo"),
+            pool_size=self.config.get("db", "pool_size"),
+            max_overflow=self.config.get("db", "max_overflow"),
         )
 
         if self.test_connection(self.engine):
@@ -48,12 +55,10 @@ class DataBase:
         self.metadata_object.create_all(self.engine)
 
 
-    def drop_tables(self,) -> None:
+    def drop_all_tables(self,) -> None:
         if self.engine.dialect.name == 'postgresql':
             with self.engine.begin() as conn:
-                # Get all table names in dependency order
-                tables = inspect(conn).get_table_names()
-                # Drop all with CASCADE
+                tables = inspect(conn).get_table_names() # Get all table names in dependency order
                 for table in reversed(tables):
                     conn.execute(text(f'DROP TABLE IF EXISTS "{table}" CASCADE'))
         else:
