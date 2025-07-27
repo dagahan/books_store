@@ -1,4 +1,5 @@
 import sys
+import asyncio
 from loguru import logger
 import argparse
 from typing import Optional, List
@@ -10,8 +11,13 @@ class DbCtl:
     def __init__(self) -> None:
         self.parser = self._setup_parser()
         self.data_base = DataBase()
-        self.data_base.init_alchemy_engine()
-        self.models = DataBaseTables()
+        asyncio.run(self.data_base.init_alchemy_engine())
+
+        self.async_session = async_sessionmaker(
+            self.data_base.engine, 
+            expire_on_commit=False,
+            class_=AsyncSession
+        )
 
 
     def _setup_parser(self) -> argparse.ArgumentParser:
@@ -24,40 +30,40 @@ class DbCtl:
         return parser
 
 
-    def run(self, args: Optional[List[str]] = None) -> None:
+    async def run(self, args: Optional[List[str]] = None) -> None:
         parsed = self.parser.parse_args(args)
 
         if not parsed.command:
             self.parser.print_help()
             sys.exit(1)
 
-        getattr(self, f"handle_{parsed.command}")(parsed)
+        await getattr(self, f"handle_{parsed.command}")(parsed)
 
 
-    def handle_insert_test(self, args) -> None:
-        print(f"test data is inserting...")
+    async def handle_insert_test(self, args) -> None:
+        logger.debug(f"test data is inserting...")
 
-        users_table = self.models.users_table
-        
-        stmt = insert(users_table).values(
-            {
-            "first_name": "nikita",
-            "last_name": "usov",
-            "middle_name": "maksimovich",
-            "email": "nikitka223@gmail.com",
-            "phone": "79124100333"
-        }
-        )
-        
-        with self.data_base.engine.connect() as conn:
+        async with self.async_session() as session:
             try:
-                conn.execute(stmt)
-                conn.commit()
-                print("User successfully inserted!")
+                new_user = User(
+                    first_name="Nikita",
+                    last_name="Usov",
+                    middle_name="Maksimovich",
+                    email="nikitka223@gmail.com",
+                    phone="79124100333"
+                )
+                
+                session.add(new_user)
+                await session.commit()
+                
+                logger.success(f"User inserted successfully! ID: {new_user.id}")
+
             except Exception as e:
-                conn.rollback()
-                print(f"Error inserting user: {e}")
+                await session.rollback()
+                logger.error(f"Error inserting test data: {e}")
+                import traceback
+                logger.debug(traceback.format_exc())
         
 
 if __name__ == "__main__":
-    DbCtl().run()
+    asyncio.run(DbCtl().run())
