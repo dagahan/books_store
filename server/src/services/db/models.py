@@ -1,19 +1,31 @@
-from sqlalchemy import (
-    Integer,
-    String,
-    Boolean,
-    Float,
-    TIMESTAMP,
-    ForeignKey,
-    Enum,
-    Numeric,
-    )
-
 import enum
+import datetime
+from uuid import uuid4
 
+from sqlalchemy import (
+    TIMESTAMP,
+    Boolean,
+    Enum,
+    Float,
+    ForeignKey,
+    Integer,
+    Numeric,
+    String,
+    func,
+    select,
+)
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
-from uuid import uuid4
+from typing import Annotated
+
+
+UUIDpk = Annotated[UUID, mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid4)]
+created_at = Annotated[datetime.datetime, mapped_column(server_default=func.now())]
+updated_at = Annotated[datetime.datetime, mapped_column
+                       (
+                            server_default=func.now(),
+                            onupdate=func.now(),
+                        )]
 
 
 class Base(DeclarativeBase):
@@ -44,13 +56,15 @@ class DeliveryGroupStatusEnum(str, enum.Enum):
 class ProductType(Base):
     __tablename__ = "product_types"
     
-    id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+    id: Mapped[UUIDpk]
     seller_id: Mapped[UUID] = mapped_column(ForeignKey('sellers.id'), nullable=False)
     available: Mapped[bool] = mapped_column(Boolean, nullable=False)
     cost: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
     sale: Mapped[float] = mapped_column(Float, nullable=True)
     author_id: Mapped[UUID] = mapped_column(ForeignKey('authors.id'), nullable=False)
     date_publication: Mapped[TIMESTAMP] = mapped_column(TIMESTAMP, nullable=False)
+    created_at: Mapped[created_at]
+    updated_at: Mapped[updated_at]
     
     seller: Mapped["Seller"] = relationship("Seller", back_populates='product_types')
     author: Mapped["Author"] = relationship("Author", back_populates='product_types')
@@ -61,9 +75,11 @@ class ProductType(Base):
 class Product(Base):
     __tablename__ = "products"
     
-    id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+    id: Mapped[UUIDpk]
     product_type_id: Mapped[UUID] = mapped_column(ForeignKey('product_types.id'), nullable=False)
     warehouse_id: Mapped[UUID] = mapped_column(ForeignKey('warehouses.id'), nullable=False)
+    created_at: Mapped[created_at]
+    updated_at: Mapped[updated_at]
     
     product_type: Mapped["ProductType"] = relationship("ProductType", back_populates='products')
     warehouse: Mapped["Warehouse"] = relationship("Warehouse", back_populates='products')
@@ -73,12 +89,14 @@ class Product(Base):
 class Purchase(Base):
     __tablename__ = "purchases"
     
-    id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+    id: Mapped[UUIDpk]
     timestamp: Mapped[TIMESTAMP] = mapped_column(TIMESTAMP, nullable=False)
     payment_method: Mapped[PaymentMethodEnum] = mapped_column(Enum(PaymentMethodEnum), nullable=False)
     delivery_group_id: Mapped[UUID] = mapped_column(ForeignKey('delivery_groups.id'), nullable=False)
     buyer_id: Mapped[UUID] = mapped_column(ForeignKey('users.id'), nullable=False)
     seller_id: Mapped[UUID] = mapped_column(ForeignKey('users.id'), nullable=False)
+    created_at: Mapped[created_at]
+    updated_at: Mapped[updated_at]
     
     delivery_group: Mapped["DeliveryGroup"] = relationship("DeliveryGroup", back_populates='purchase')
     buyer: Mapped["User"] = relationship("User", foreign_keys=[buyer_id], back_populates='purchases_as_buyer')
@@ -93,6 +111,8 @@ class PurchaseItem(Base):
     product_type_id: Mapped[UUID] = mapped_column(ForeignKey('product_types.id'), primary_key=True)
     quantity: Mapped[int] = mapped_column(Integer, nullable=False)
     unit_cost: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
+    created_at: Mapped[created_at]
+    updated_at: Mapped[updated_at]
     
     purchase: Mapped["Purchase"] = relationship("Purchase", back_populates='items')
     product_type: Mapped["ProductType"] = relationship("ProductType", back_populates='purchase_items')
@@ -101,9 +121,11 @@ class PurchaseItem(Base):
 class Delivery(Base):
     __tablename__ = "deliveries"
     
-    id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+    id: Mapped[UUIDpk]
     product_id: Mapped[UUID] = mapped_column(ForeignKey('products.id'), nullable=False)
     status: Mapped[DeliveryStatusEnum] = mapped_column(Enum(DeliveryStatusEnum), nullable=False)
+    created_at: Mapped[created_at]
+    updated_at: Mapped[updated_at]
     
     product: Mapped["Product"] = relationship("Product", back_populates='deliveries')
 
@@ -111,10 +133,12 @@ class Delivery(Base):
 class DeliveryGroup(Base):
     __tablename__ = "delivery_groups"
     
-    id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+    id: Mapped[UUIDpk]
     target_warehouse_id: Mapped[UUID] = mapped_column(ForeignKey('warehouses.id'), nullable=False)
     target_user_id: Mapped[UUID] = mapped_column(ForeignKey('users.id'), nullable=False)
     status: Mapped[DeliveryGroupStatusEnum] = mapped_column(Enum(DeliveryGroupStatusEnum), nullable=False)
+    created_at: Mapped[created_at]
+    updated_at: Mapped[updated_at]
     
     target_warehouse: Mapped["Warehouse"] = relationship("Warehouse", back_populates='delivery_groups')
     target_user: Mapped["User"] = relationship("User", back_populates='delivery_groups')
@@ -124,7 +148,7 @@ class DeliveryGroup(Base):
 class Author(Base):
     __tablename__ = "authors"
     
-    id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+    id: Mapped[UUIDpk]
     name: Mapped[str] = mapped_column(String(128), nullable=False)
     
     product_types: Mapped[list["ProductType"]] = relationship("ProductType", back_populates='author')
@@ -133,9 +157,11 @@ class Author(Base):
 class Seller(Base):
     __tablename__ = "sellers"
     
-    id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid4)
-    user_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True, nullable=False), ForeignKey('users.id', ondelete='CASCADE'))
+    id: Mapped[UUIDpk]
+    user_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
     name: Mapped[str] = mapped_column(String(128), nullable=False)
+    created_at: Mapped[created_at]
+    updated_at: Mapped[updated_at]
     
     product_types: Mapped[list["ProductType"]] = relationship("ProductType", back_populates='seller')
     user: Mapped["User"] = relationship("User", back_populates='seller')
@@ -144,12 +170,14 @@ class Seller(Base):
 class User(Base):
     __tablename__ = "users"
     
-    id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+    id: Mapped[UUIDpk]
     first_name: Mapped[str] = mapped_column(String(32), nullable=False)
     last_name: Mapped[str] = mapped_column(String(32), nullable=False)
     middle_name: Mapped[str] = mapped_column(String(32), nullable=False)
     email: Mapped[str] = mapped_column(String(64), nullable=True)
     phone: Mapped[str] = mapped_column(String(16), nullable=False)
+    created_at: Mapped[created_at]
+    updated_at: Mapped[updated_at]
     
     delivery_groups: Mapped[list["DeliveryGroup"]] = relationship("DeliveryGroup", back_populates='target_user')
     purchases_as_buyer: Mapped[list["Purchase"]] = relationship("Purchase", foreign_keys="[Purchase.buyer_id]", back_populates='buyer')
@@ -160,9 +188,11 @@ class User(Base):
 class Warehouse(Base):
     __tablename__ = "warehouses"
     
-    id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+    id: Mapped[UUIDpk]
     available: Mapped[bool] = mapped_column(Boolean, nullable=False)
     location: Mapped[str] = mapped_column(String(256), nullable=False)
+    created_at: Mapped[created_at]
+    updated_at: Mapped[updated_at]
     
     products: Mapped[list["Product"]] = relationship("Product", back_populates='warehouse')
     delivery_groups: Mapped[list["DeliveryGroup"]] = relationship("DeliveryGroup", back_populates='target_warehouse')

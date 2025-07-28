@@ -1,15 +1,13 @@
+import colorama
 from loguru import logger
 from sqlalchemy import (
-    engine,
     text,
-    inspect,
-    insert,
 )
-
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncEngine, async_sessionmaker, AsyncSession
-from sqlalchemy.orm import Session, sessionmaker
-
-import colorama
+from sqlalchemy.ext.asyncio import (
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
 
 from src.core.config import ConfigLoader
 from src.core.utils import EnvTools
@@ -31,7 +29,7 @@ class DataBase:
 
 
     async def init_alchemy_engine(self,) -> None:
-        logger.info(f"Starting service..")
+        logger.info("Starting service..")
         self.engine = create_async_engine(
             url=self.engine_config,
             echo=self.config.get("db", "echo"),
@@ -44,7 +42,7 @@ class DataBase:
         )
 
         self.async_session = async_sessionmaker(
-            self.engine, 
+            self.engine,
             expire_on_commit=False,
             class_=AsyncSession
         )
@@ -55,7 +53,7 @@ class DataBase:
             raise Exception(f"{colorama.Fore.RED}Cannot establish connection with data base.")
         
 
-    async def test_connection(self) -> bool: 
+    async def test_connection(self) -> bool:
         try:
             async with self.async_session() as session:
                 result = await session.execute(text("SELECT 1"))

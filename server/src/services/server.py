@@ -1,8 +1,7 @@
-import asyncio
 import uvicorn
 from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
 from loguru import logger
+from pydantic import BaseModel
 
 from src.core.utils import EnvTools
 from src.services.db.database import DataBase
