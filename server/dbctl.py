@@ -45,18 +45,45 @@ class DbCtl:
     async def handle_insert_test(self, args) -> None:
         async with self.data_base.async_session() as session:
             try:
-                new_user = User(
+                new_users = User(
                     first_name="Nikita",
                     last_name="Usov",
                     middle_name="Maksimovich",
                     email="nikitka223@gmail.com",
                     phone="79124100333"
+                ), User(
+                    first_name="Maxim",
+                    last_name="Usov",
+                    middle_name="Victorovich",
+                    email="mvusov@gmail.com",
+                    phone="79124155235"
+                ), User(
+                    first_name="Jaba",
+                    last_name="Usova",
+                    middle_name="Victorovna",
+                    email="jabau@gmail.com",
+                    phone="79124444533"
+                ), User(
+                    first_name="Yana",
+                    last_name="Alshekova",
+                    middle_name="Georgeevna",
+                    email="georgeevna22@gmail.com",
+                    phone="79151238735"
+                ), User(
+                    first_name="Olga",
+                    last_name="Usova",
+                    middle_name="Vladimirna",
+                    email="vladimirnaolga24@gmail.com",
+                    phone="79135785235"
                 )
+                    
+                for user in new_users:
+                    session.add(user)
+                    logger.success(f"User inserted successfully! ID: {user.id}")
                 
-                session.add_all([new_user])
                 await session.commit()
                 
-                logger.success(f"User inserted successfully! ID: {new_user.id}")
+                
 
             except Exception as e:
                 await session.rollback()
@@ -114,7 +141,6 @@ class DbCtl:
                 
                 session.add(user)
                 await session.commit()
-                await session.refresh(user)
                 
                 logger.success(f"User {user_id} updated successfully")
                 

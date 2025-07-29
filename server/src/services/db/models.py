@@ -12,7 +12,6 @@ from sqlalchemy import (
     Numeric,
     String,
     func,
-    select,
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
@@ -20,12 +19,14 @@ from typing import Annotated
 
 
 UUIDpk = Annotated[UUID, mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid4)]
-created_at = Annotated[datetime.datetime, mapped_column(server_default=func.now())]
+created_at = Annotated[datetime.datetime, mapped_column(server_default=func.now(), nullable=False)]
 updated_at = Annotated[datetime.datetime, mapped_column
                        (
                             server_default=func.now(),
                             onupdate=func.now(),
+                            nullable=False
                         )]
+money = Annotated[Numeric, mapped_column(Numeric(10, 2), nullable=False)]
 
 
 class Base(DeclarativeBase):
@@ -59,7 +60,7 @@ class ProductType(Base):
     id: Mapped[UUIDpk]
     seller_id: Mapped[UUID] = mapped_column(ForeignKey('sellers.id'), nullable=False)
     available: Mapped[bool] = mapped_column(Boolean, nullable=False)
-    cost: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
+    cost: Mapped[money]
     sale: Mapped[float] = mapped_column(Float, nullable=True)
     author_id: Mapped[UUID] = mapped_column(ForeignKey('authors.id'), nullable=False)
     date_publication: Mapped[TIMESTAMP] = mapped_column(TIMESTAMP, nullable=False)
@@ -110,7 +111,7 @@ class PurchaseItem(Base):
     purchase_id: Mapped[UUID] = mapped_column(ForeignKey('purchases.id'), primary_key=True)
     product_type_id: Mapped[UUID] = mapped_column(ForeignKey('product_types.id'), primary_key=True)
     quantity: Mapped[int] = mapped_column(Integer, nullable=False)
-    unit_cost: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
+    unit_cost: Mapped[money]
     created_at: Mapped[created_at]
     updated_at: Mapped[updated_at]
     
@@ -150,6 +151,8 @@ class Author(Base):
     
     id: Mapped[UUIDpk]
     name: Mapped[str] = mapped_column(String(128), nullable=False)
+    created_at: Mapped[created_at]
+    updated_at: Mapped[updated_at]
     
     product_types: Mapped[list["ProductType"]] = relationship("ProductType", back_populates='author')
 
