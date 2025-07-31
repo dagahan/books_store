@@ -58,6 +58,7 @@ class ProductType(Base):
     __tablename__ = "product_types"
     
     id: Mapped[UUIDpk]
+    name: Mapped[str] = mapped_column(String(128), nullable=True)
     seller_id: Mapped[UUID] = mapped_column(ForeignKey('sellers.id'), nullable=False)
     available: Mapped[bool] = mapped_column(Boolean, nullable=False)
     cost: Mapped[money]
