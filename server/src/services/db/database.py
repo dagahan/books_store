@@ -50,8 +50,13 @@ class DataBase:
             logger.info(f"{colorama.Fore.GREEN}Connection with data base has been established!")
         else:
             raise Exception(f"{colorama.Fore.RED}Cannot establish connection with data base.")
-        
 
+
+    async def get_session(self) -> AsyncSession:
+        async with self.async_session() as session:
+            yield session
+
+        
     async def test_connection(self) -> bool:
         try:
             async with self.async_session() as session:
