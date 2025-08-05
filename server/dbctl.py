@@ -13,7 +13,8 @@ from sqlalchemy import (
 )
 
 from src.services.db.database import DataBase
-from src.services.db.entities.user import *
+from src.services.db.schemas import *
+from src.services.db.models import *
 
 
 class DbCtl:
@@ -191,23 +192,103 @@ class DbCtl:
         return datetime.datetime.now() - datetime.timedelta(days=random.randint(0, 365*5))
 
 
+    def _get_random_first_name(self):
+        return random.choice([
+            "Алексей", "Максим", "Мария", "Ольга", "Дмитрий",
+            "Анна", "Сергей", "Елена", "Иван", "Наталья",
+            "Андрей", "Екатерина", "Михаил", "Татьяна", "Владимир",
+            "Светлана", "Александр", "Ирина", "Юрий", "Людмила",
+            "Константин", "Виктор", "Ксения", "Павел", "Полина",
+            "Григорий", "Вероника", "Борис", "Диана", "Роман",
+            "Кирилл", "Жанна", "Василиса", "Рустам", "Дарья",
+            "Роберт", "Лилия", "Игорь", "Нина", "Тимофей"
+        ])
+
+    def _get_random_last_name(self):
+        return random.choice([
+            "Иванов", "Петров", "Сидоров", "Федоров", "Васильев",
+            "Кузнецов", "Попов", "Морозов", "Волков", "Соколов",
+            "Новиков", "Фишер", "Козлов", "Орлов", "Лебедев",
+            "Семенов", "Егоров", "Павлов", "Захаров", "Степанов",
+            "Никитин", "Макаров", "Алексеев", "Гусев", "Лазарев",
+            "Медведев", "Крылов", "Гаврилов", "Дорофеев", "Виноградов",
+            "Карпов", "Поляков", "Осипов", "Прохоров", "Фролов",
+            "Антонов", "Романов", "Шестаков", "Николаев", "Афанасьев"
+        ])
+
+    def _get_random_middle_name(self):
+        return random.choice([
+            "Алексеевич", "Максимович", "Дмитриевич", "Сергеевич", "Иванович",
+            "Андреевич", "Михайлович", "Александрович", "Владимирович", "Петрович",
+            "Алексеевна", "Максимовна", "Дмитриевна", "Сергеевна", "Ивановна",
+            "Андреевна", "Михайловна", "Александровна", "Владимировна", "Петровна",
+            "Николаевич", "Викторович", "Николаевна", "Викторовна", "Григорьевич",
+            "Григорьевна", "Юрьевич", "Юрьевна", "Романович", "Романовна",
+            "Борисович", "Борисовна", "Тимофеевич", "Тимофеевна", "Константинович",
+            "Константиновна", "Рустамович", "Рустамовна", "Дмитриевна", "Дмитриевич"
+        ])
+
+    def _get_random_author_name(self):
+        return random.choice([
+            "Александр Пушкин", "Лев Толстой", "Федор Достоевский", "Антон Чехов",
+            "Иван Тургенев", "Николай Гоголь", "Михаил Лермонтов", "Анна Ахматова",
+            "Борис Пастернак", "Владимир Маяковский", "Сергей Есенин", "Марина Цветаева",
+            "Иосиф Бродский", "Варлам Шаламов", "Александр Солженицын", "Василий Шукшин",
+            "Николай Некрасов", "Дмитрий Мережковский", "Иван Бунин", "Михаил Булгаков",
+            "Юрий Олеша", "Набоков Владимир", "Александр Грибоедов", "Валентин Распутин",
+            "Всеволод Иванов", "Юрий Трифонов", "Константин Паустовский", "Владимир Набоков",
+            "Анна Каренина", "Лидия Чуковская", "Валерий Брюсов", "Ольга Берггольц",
+            "Осип Мандельштам", "Михаил Пришвин", "Виктор Астафьев", "Валентин Катаев",
+            "Константин Симонов", "Михаил Зощенко"
+        ])
+
+    def _get_random_product_name(self):
+        return random.choice([
+            "Смартфон", "Ноутбук", "Планшет", "Наушники", "Клавиатура",
+            "Мышь", "Монитор", "Принтер", "Веб-камера", "Колонки",
+            "Роман", "Детектив", "Фантастика", "Биография", "Учебник",
+            "Куртка", "Джинсы", "Футболка", "Платье", "Обувь",
+            "Настольная игра", "Пазл", "Конструктор", "Мяч", "Ракетка",
+            "Гитара", "Саксофон", "Микрофон", "Чехол", "Наушники-беспроводные",
+            "Кофемашина", "Тостер", "Мороженица", "Плеер", "Телевизор",
+            "Фотоаппарат", "Шахматы", "Головоломка", "Планшет-фонарик", "Путеводитель"
+        ])
+
+    def _get_random_location(self):
+        return random.choice([
+            "Москва, ул. Тверская 1", "Санкт-Петербург, Невский пр. 10",
+            "Новосибирск, ул. Ленина 25", "Екатеринбург, ул. Малышева 15",
+            "Казань, ул. Баумана 30", "Нижний Новгород, ул. Большая Покровская 5",
+            "Челябинск, ул. Кирова 20", "Самара, ул. Ленинградская 35",
+            "Омск, ул. Маркса 40", "Ростов-на-Дону, пр. Ворошиловский 12",
+            "Владивосток, ул. Светланская 2", "Ярославль, ул. Волковская 14",
+            "Иркутск, ул. Ленина 10", "Томск, пр. Ленина 50", "Оренбург, ул. Советская 9",
+            "Уфа, ул. Ленина 1", "Воронеж, ул. Плехановская 60", "Пермь, ул. Ленина 53",
+            "Краснодар, ул. Красная 80", "Волгоград, пр. Ленина 45", "Рязань, ул. Соборная 12",
+            "Нижнекамск, ул. Мира 5", "Череповец, ул. Ленина 33", "Кемерово, пр. Советский 22",
+            "Тула, ул. Советская 99", "Иваново, ул. Радищева 7", "Липецк, ул. Октябрьская 15",
+            "Тамбов, ул. Советская 12", "Саратов, ул. Мичурина 18", "Ульяновск, ул. Ленина 20",
+            "Барнаул, пр. Ленина 30", "Калининград, ул. Театральная 1", "Сургут, пр. Мира 40",
+            "Новороссийск, ул. Советская 11", "Мурманск, ул. Ленинградская 5", "Севастополь, пр. Нахимова 3"
+        ])
+
     def _get_random_string(self, length=10):
         return ''.join(random.choice('abcdefghijklmnopqrstuvwxyz') for i in range(length))
 
 
     def _get_random_phone(self):
-        return f"79{random.randint(100000000, 999999999)}"
+        return f"79{random.randint(100000000, 99999999999999)}"
 
 
     async def handle_seed_data(self, args) -> None:
         async with self.data_base.async_session() as session:
             try:
                 users = []
-                for _ in range(random.randint(20, 250)):
+                for _ in range(random.randint(1500, 2500)):
                     user = User(
-                        first_name=self._get_random_string(8),
-                        last_name=self._get_random_string(10),
-                        middle_name=self._get_random_string(10),
+                        first_name=self._get_random_first_name(),
+                        last_name=self._get_random_last_name(),
+                        middle_name=self._get_random_middle_name(),
                         email=f"{self._get_random_string(10)}@example.com",
                         phone=self._get_random_phone(),
                     )
@@ -217,18 +298,18 @@ class DbCtl:
                 logger.info(f"{len(users)} users created.")
 
                 authors = []
-                for _ in range(random.randint(20, len(users))):
-                    author = Author(name=f"{self._get_random_string(5)} {self._get_random_string(8)}")
+                for _ in range(random.randint(20, 500)):
+                    author = Author(name=self._get_random_author_name())
                     authors.append(author)
                 session.add_all(authors)
                 await session.flush()
                 logger.info(f"{len(authors)} authors created.")
 
                 sellers = []
-                for i in range(random.randint(20, len(users))):
+                for i in range(random.randint(20, int(len(users) / 10))):
                     seller = Seller(
                         user_id=users[i].id,
-                        name=f"Seller {self._get_random_string(5)}"
+                        name=f"{self._get_random_first_name()}\'s shop"
                     )
                     sellers.append(seller)
                 session.add_all(sellers)
@@ -236,10 +317,10 @@ class DbCtl:
                 logger.info(f"{len(sellers)} sellers created.")
 
                 warehouses = []
-                for _ in range(170):
+                for _ in range(140):
                     warehouse = Warehouse(
                         available=True,
-                        location=f"Location {self._get_random_string(15)}"
+                        location=self._get_random_location()
                     )
                     warehouses.append(warehouse)
                 session.add_all(warehouses)
@@ -251,6 +332,7 @@ class DbCtl:
                     product_type = ProductType(
                         seller_id=random.choice(sellers).id,
                         available=True,
+                        name=self._get_random_product_name(),
                         cost=Decimal(f"{random.uniform(10, 500):.2f}"),
                         sale=random.uniform(0.0, 0.5),
                         author_id=random.choice(authors).id,
@@ -263,7 +345,7 @@ class DbCtl:
 
                 products = []
                 for pt in product_types:
-                    for _ in range(random.randint(500, 5000)):
+                    for _ in range(random.randint(50, 100)):
                         product = Product(
                             product_type_id=pt.id,
                             warehouse_id=random.choice(warehouses).id
@@ -274,7 +356,7 @@ class DbCtl:
                 logger.info(f"{len(products)} products created.")
 
                 purchases = []
-                for i in range(random.randint(500, len(products))):
+                for i in range(random.randint(50, 150)):
                     buyer = random.choice(users)
                     seller = random.choice(sellers)
                     

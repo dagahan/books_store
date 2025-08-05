@@ -122,7 +122,7 @@ class Server:
 
 
         @self.app.get("/users", tags=["users"], status_code=status.HTTP_200_OK)
-        async def get_all_users() -> List[UserDTO]:
+        async def get_all_users() -> Optional[List[UserDTO] | UserDTO]:
             '''
             returns all of users with their data.
             '''
