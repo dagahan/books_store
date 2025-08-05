@@ -35,6 +35,7 @@ class Base(DeclarativeBase):
     pass
 
 
+
 class PaymentMethodEnum(str, enum.Enum):
     cash = 'cash'
     card = 'card'
