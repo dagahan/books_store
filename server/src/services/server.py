@@ -69,24 +69,36 @@ class Server:
         await server.serve()
 
     
-    async def is_attribute_unique(self, session: AsyncSession, attribute: Any, value: Any) -> bool:
+    async def is_attribute_unique(
+            self,
+            session: AsyncSession,
+            attribute: Any,
+            value: Any,
+            exclude_id: Optional[UUID | str] = None,
+            ) -> bool:
             model = attribute.class_
             if not hasattr(model, '__tablename__'):
                 raise ValueError("Attribute must be a SQLAlchemy column property")
             
-            result = await session.execute(
+            query = (
                 select(
                     model
                 )
                 .where(attribute == value)
             )
-            return result.scalar_one_or_none() is None
+
+            
+            if exclude_id is not None:
+                query = query.where(model.id != exclude_id)
+
+            result = await session.execute(query)
+            return len(result.scalars().all()) == 0
     
 
     def http_ex_attribute_is_not_unique(self, attribute: Any) -> HTTPException:
         return HTTPException(
                             status_code=400,
-                            detail=f"User with this {attribute} already exists"
+                            detail=f"User with this {getattr(attribute, "key", str(attribute))} already exists"
                         )
 
 
@@ -141,7 +153,7 @@ class Server:
             
 
         @self.app.post("/users", tags=["users"], status_code=status.HTTP_200_OK)
-        async def create_user(user_data: UserCreateDTO) -> UserDTO:
+        async def create_user(user_data: UserCreateDTO):
             async with self.data_base.async_session() as session:
                 if user_data.email:
                     if not await self.is_attribute_unique(session, User.email, user_data.email):
@@ -152,9 +164,9 @@ class Server:
                         raise self.http_ex_attribute_is_not_unique(User.phone)
                     
                 new_user = User(
-                    first_name=user_data.first_name,
-                    last_name=user_data.last_name,
-                    middle_name=user_data.middle_name,
+                    first_name=user_data.first_name.capitalize(),
+                    last_name=user_data.last_name.capitalize(),
+                    middle_name=user_data.middle_name.capitalize(),
                     email=user_data.email,
                     phone=user_data.phone
                 )
@@ -162,7 +174,7 @@ class Server:
                 session.add(new_user)
                 await session.commit()
                 logger.info(f"Created new user with ID: {new_user.id}")
-                return Response(status_code=status.HTTP_200_OK)
+                return {"message": {"UUID": f"{new_user.id}"}}
             
         
         @self.app.patch("/users/{user_id}", tags=["users"], status_code=status.HTTP_200_OK)
@@ -185,11 +197,13 @@ class Server:
                     setattr(user, key, value)
 
                 if 'email' in update_dict and update_dict['email']:
-                    if not await self.is_attribute_unique(session, User.email, update_dict["email"]):
+                    print(update_dict['email'])
+                    if not await self.is_attribute_unique(session, User.email, update_dict["email"], exclude_id=user_id):
                         raise self.http_ex_attribute_is_not_unique(User.email)
                     
                 if 'phone' in update_dict and update_dict['phone']:
-                    if not await self.is_attribute_unique(session, User.phone, update_dict["phone"]):
+                    print(update_dict['phone'])
+                    if not await self.is_attribute_unique(session, User.phone, update_dict["phone"], exclude_id=user_id):
                         raise self.http_ex_attribute_is_not_unique(User.phone)
                     
                 await session.commit()
@@ -200,7 +214,7 @@ class Server:
 
         @self.app.delete("/users/{user_id}", tags=["users"], status_code=status.HTTP_200_OK)
         async def delete_user(user_id: UUID):
-            async with self.data_base.async_session as session:
+            async with self.data_base.async_session() as session:
                 result = await session.execute(
                     select(
                         User

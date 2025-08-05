@@ -40,6 +40,9 @@ class UserDTO(TimestampMixin):
     middle_name: str
     email: Optional[str] = None
     phone: str
+    @field_validator('first_name', 'last_name', 'middle_name', mode='before')
+    def capitalize_name(cls, v: str) -> str:
+        return v.strip().capitalize()
 
 
 class UserCreateDTO(BaseDTO):
@@ -48,6 +51,9 @@ class UserCreateDTO(BaseDTO):
     middle_name: str
     email: Optional[str] = None
     phone: str
+    @field_validator('first_name', 'last_name', 'middle_name', mode='before')
+    def capitalize_name(cls, v: str) -> str:
+        return v.strip().capitalize()
 
 
 class UserUpdateDTO(BaseDTO):
@@ -56,6 +62,9 @@ class UserUpdateDTO(BaseDTO):
     middle_name: Optional[str] = None
     email: Optional[str] = None
     phone: Optional[str] = None
+    @field_validator('first_name', 'last_name', 'middle_name', mode='before')
+    def capitalize_name(cls, v: str) -> str:
+        return v.strip().capitalize()
 
 
 class AuthorDTO(TimestampMixin):
