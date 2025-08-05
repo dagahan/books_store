@@ -1,5 +1,6 @@
-import enum
 import datetime
+import enum
+from typing import Annotated
 from uuid import uuid4
 
 from sqlalchemy import (
@@ -15,8 +16,6 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
-from typing import Annotated
-
 
 UUIDpk = Annotated[UUID, mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid4)]
 created_at = Annotated[datetime.datetime, mapped_column(server_default=func.now(), nullable=False)]

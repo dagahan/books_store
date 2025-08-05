@@ -34,7 +34,7 @@ line-length = 88
 [tool.ruff.lint]
 extend-select = ["W", "N", "R", "I"]
 # Letters means included rules classes from PEP8
-ignore = ["W293"]
+ignore = ["W293", "F403", "F405"]
 
 
 [db]

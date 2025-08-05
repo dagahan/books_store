@@ -1,22 +1,19 @@
 import argparse
 import asyncio
-import sys
-import random
 import datetime
+import random
+import sys
 from decimal import Decimal
 from typing import List, Optional
 
 from loguru import logger
+from sqlalchemy import (
+    and_,
+    select,
+)
 
 from src.services.db.database import DataBase
 from src.services.db.models import *
-
-from sqlalchemy import (
-    cast,
-    and_,
-    select,
-    func,
-)
 
 
 class DbCtl:
@@ -165,7 +162,7 @@ class DbCtl:
                 
                 if not user:
                     logger.error(f"User with ID {user_id} not found")
-                    return None
+                    return
                 
                 valid_fields = {'first_name', 'last_name', 'middle_name', 'email', 'phone'}
                 invalid_fields = set(update_data.keys()) - valid_fields
@@ -303,7 +300,7 @@ class DbCtl:
                     product_types_set = set({})
                     for i in range(10):
                         type = random.choice(product_types)
-                        if not type in product_types_set:
+                        if type not in product_types_set:
                             product_types_set.add(type)
                             purchase_item = PurchaseItem(
                                 purchase_id=purchase.id,

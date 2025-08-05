@@ -1,26 +1,24 @@
 
 import asyncio
 import random
-import uuid
+
 from faker import Faker
 from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.services.db.database import DataBase
 from src.services.db.models import (
-    User,
-    Seller,
     Author,
-    Warehouse,
-    ProductType,
+    DeliveryGroup,
+    DeliveryGroupStatusEnum,
+    PaymentMethodEnum,
     Product,
+    ProductType,
     Purchase,
     PurchaseItem,
-    Delivery,
-    DeliveryGroup,
-    PaymentMethodEnum,
-    DeliveryStatusEnum,
-    DeliveryGroupStatusEnum,
+    Seller,
+    User,
+    Warehouse,
 )
 
 # Configuration for the amount of data to generate

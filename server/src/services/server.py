@@ -1,42 +1,32 @@
-import uvicorn
 import asyncio
+from typing import Any, Iterable
 
-from loguru import logger
-from pydantic import BaseModel
-
-from typing import Any
-
-from src.core.utils import EnvTools
-from src.core.config import ConfigLoader
-from src.services.db.database import DataBase
-
-from src.services.db.models import *
-from src.services.db.shemas import *
-
+import uvicorn
 from fastapi import (
     FastAPI,
     HTTPException,
-    status,
     Response,
+    status,
 )
-
+from loguru import logger
 from sqlalchemy import (
-    cast,
-    and_,
     select,
-    func,
 )
-
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
 )
-
 from sqlalchemy.orm import (
-    selectinload,
-    joinedload,
-    class_mapper,
     noload,
 )
+
+import colorama
+from pydantic import ValidationError
+
+from src.core.config import ConfigLoader
+from src.core.utils import EnvTools
+from src.services.db.database import DataBase
+from src.services.db.models import *
+from src.services.db.schemas import *
 
 
 class Server:
@@ -100,6 +90,25 @@ class Server:
                             status_code=400,
                             detail=f"User with this {getattr(attribute, "key", str(attribute))} already exists"
                         )
+    
+    
+    def validate_models_by_schema(self, models: Any, schema: Any) -> Any:
+        if not isinstance(models, Iterable):
+            models = [models]
+
+        valid_models = []
+        for model in models:
+            try:
+                dto = schema.model_validate(model, from_attributes=True)
+                valid_models.append(dto)
+                
+            except ValidationError as ex:
+                model_id = getattr(model, "id", None)
+                logger.warning(f"{colorama.Fore.YELLOW}Skipping invalid instance of {schema.__name__} (id={model_id}): {ex.errors()}")
+
+        if len(valid_models) == 1:
+            return valid_models[0]
+        return valid_models
 
 
     async def _register_routes(self):
@@ -127,9 +136,9 @@ class Server:
                 row_items = result.scalars().all()
 
                 if not row_items:
-                    raise HTTPException(status_code=404, detail=f"There is no users")
+                    raise HTTPException(status_code=404, detail="There is no users")
 
-                return [UserDTO.model_validate(row, from_attributes=True) for row in row_items]
+                return self.validate_models_by_schema(row_items, UserDTO)
 
 
         @self.app.get("/users/{user_id}", tags=["users"], status_code=status.HTTP_200_OK)
@@ -147,9 +156,9 @@ class Server:
 
                 if not user:
                     logger.warning(f"User with ID {user_id} not found.")
-                    raise HTTPException(status_code=404, detail=f"User not found")
+                    raise HTTPException(status_code=404, detail="User not found")
                 
-                return UserDTO.model_validate(user, from_attributes=True)
+                return self.validate_models_by_schema(user, UserDTO)
             
 
         @self.app.post("/users", tags=["users"], status_code=status.HTTP_200_OK)

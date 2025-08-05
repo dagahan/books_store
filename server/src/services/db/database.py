@@ -27,7 +27,6 @@ class DataBase:
         self.async_session = None
 
 
-
     async def init_alchemy_engine(self,) -> None:
         logger.info("Starting service..")
         self.engine = create_async_engine(
