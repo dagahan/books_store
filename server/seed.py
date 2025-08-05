@@ -7,7 +7,7 @@ from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.services.db.database import DataBase
-from src.services.db.models import (
+from src.services.db.entities.user import (
     Author,
     DeliveryGroup,
     DeliveryGroupStatusEnum,

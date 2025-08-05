@@ -20,7 +20,7 @@ class Service:
 
     def run_service(self):
         self.logger_setup.configure()
-        asyncio.run(self.server.run_server())
+        asyncio.run(self.run_server())
 
 
 if __name__ == "__main__":

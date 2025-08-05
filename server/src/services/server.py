@@ -1,5 +1,6 @@
 import asyncio
-from typing import Any, Iterable
+from typing import Any, Iterable, List, Optional
+from uuid import UUID
 
 import uvicorn
 from fastapi import (
@@ -25,8 +26,19 @@ from pydantic import ValidationError
 from src.core.config import ConfigLoader
 from src.core.utils import EnvTools
 from src.services.db.database import DataBase
-from src.services.db.models import *
 from src.services.db.schemas import *
+
+from src.services.db.models.base_model import *
+from src.services.db.models.author import Author
+from src.services.db.models.delivery import Delivery
+from src.services.db.models.delivery_group import DeliveryGroup
+from src.services.db.models.product import Product
+from src.services.db.models.product_type import ProductType
+from src.services.db.models.purchase import Purchase
+from src.services.db.models.purchase_item import PurchaseItem
+from src.services.db.models.seller import Seller
+from src.services.db.models.user import User
+from src.services.db.models.warehourse import Warehouse
 
 
 class Server:
@@ -56,7 +68,7 @@ class Server:
 
         logger.info(self.data_base.engine)
 
-        await server.serve()
+        await serve()
 
     
     async def is_attribute_unique(
