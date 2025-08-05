@@ -42,6 +42,22 @@ class UserDTO(TimestampMixin):
     phone: str
 
 
+class UserCreateDTO(BaseDTO):
+    first_name: str
+    last_name: str
+    middle_name: str
+    email: Optional[str] = None
+    phone: str
+
+
+class UserUpdateDTO(BaseDTO):
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    middle_name: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
+
+
 class AuthorDTO(TimestampMixin):
     id: UUID
     name: str

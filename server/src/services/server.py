@@ -1,8 +1,10 @@
 import uvicorn
 import asyncio
-from fastapi import FastAPI, HTTPException
+
 from loguru import logger
 from pydantic import BaseModel
+
+from typing import Any
 
 from src.core.utils import EnvTools
 from src.core.config import ConfigLoader
@@ -11,6 +13,13 @@ from src.services.db.database import DataBase
 from src.services.db.models import *
 from src.services.db.shemas import *
 
+from fastapi import (
+    FastAPI,
+    HTTPException,
+    status,
+    Response,
+)
+
 from sqlalchemy import (
     cast,
     and_,
@@ -18,9 +27,15 @@ from sqlalchemy import (
     func,
 )
 
+from sqlalchemy.ext.asyncio import (
+    AsyncSession,
+)
+
 from sqlalchemy.orm import (
     selectinload,
     joinedload,
+    class_mapper,
+    noload,
 )
 
 
@@ -53,6 +68,27 @@ class Server:
 
         await server.serve()
 
+    
+    async def is_attribute_unique(self, session: AsyncSession, attribute: Any, value: Any) -> bool:
+            model = attribute.class_
+            if not hasattr(model, '__tablename__'):
+                raise ValueError("Attribute must be a SQLAlchemy column property")
+            
+            result = await session.execute(
+                select(
+                    model
+                )
+                .where(attribute == value)
+            )
+            return result.scalar_one_or_none() is None
+    
+
+    def http_ex_attribute_is_not_unique(self, attribute: Any) -> HTTPException:
+        return HTTPException(
+                            status_code=400,
+                            detail=f"User with this {attribute} already exists"
+                        )
+
 
     async def _register_routes(self):
         '''
@@ -63,7 +99,7 @@ class Server:
             return {"message": f"Hello! This is {self.config.get("project", "name")} service!"}
 
 
-        @self.app.get("/users", tags=["users"])
+        @self.app.get("/users", tags=["users"], status_code=status.HTTP_200_OK)
         async def get_all_users() -> List[UserDTO]:
             '''
             returns all of users with their data.
@@ -81,11 +117,10 @@ class Server:
                 if not row_items:
                     raise HTTPException(status_code=404, detail=f"There is no users")
 
-                items_dto = [UserDTO.model_validate(row, from_attributes=True) for row in row_items]
-                return items_dto
+                return [UserDTO.model_validate(row, from_attributes=True) for row in row_items]
 
 
-        @self.app.get("/users/{user_id}", tags=["users"])
+        @self.app.get("/users/{user_id}", tags=["users"], status_code=status.HTTP_200_OK)
         async def get_user_by_id(user_id: UUID) -> UserDTO:
             async with self.data_base.async_session() as session:
                 query = (
@@ -102,5 +137,84 @@ class Server:
                     logger.warning(f"User with ID {user_id} not found.")
                     raise HTTPException(status_code=404, detail=f"User not found")
                 
-                user_dto = UserDTO.model_validate(user, from_attributes=True)
-                return user_dto
+                return UserDTO.model_validate(user, from_attributes=True)
+            
+
+        @self.app.post("/users", tags=["users"], status_code=status.HTTP_200_OK)
+        async def create_user(user_data: UserCreateDTO) -> UserDTO:
+            async with self.data_base.async_session() as session:
+                if user_data.email:
+                    if not await self.is_attribute_unique(session, User.email, user_data.email):
+                        raise self.http_ex_attribute_is_not_unique(User.email)
+                
+                if user_data.phone:
+                    if not await self.is_attribute_unique(session, User.phone, user_data.phone):
+                        raise self.http_ex_attribute_is_not_unique(User.phone)
+                    
+                new_user = User(
+                    first_name=user_data.first_name,
+                    last_name=user_data.last_name,
+                    middle_name=user_data.middle_name,
+                    email=user_data.email,
+                    phone=user_data.phone
+                )
+
+                session.add(new_user)
+                await session.commit()
+                logger.info(f"Created new user with ID: {new_user.id}")
+                return Response(status_code=status.HTTP_200_OK)
+            
+        
+        @self.app.patch("/users/{user_id}", tags=["users"], status_code=status.HTTP_200_OK)
+        async def update_user(user_id: UUID, update_data: UserUpdateDTO):
+            async with self.data_base.async_session() as session:
+                result = await session.execute(
+                    select(
+                        User
+                    )
+                    .where(User.id == user_id)
+                    .options(noload("*"))
+                )
+                user = result.scalar_one_or_none()
+
+                if not user:
+                    raise HTTPException(status_code=404, detail="User not found")
+                
+                update_dict = update_data.model_dump(exclude_unset=True)
+                for key, value in update_dict.items():
+                    setattr(user, key, value)
+
+                if 'email' in update_dict and update_dict['email']:
+                    if not await self.is_attribute_unique(session, User.email, update_dict["email"]):
+                        raise self.http_ex_attribute_is_not_unique(User.email)
+                    
+                if 'phone' in update_dict and update_dict['phone']:
+                    if not await self.is_attribute_unique(session, User.phone, update_dict["phone"]):
+                        raise self.http_ex_attribute_is_not_unique(User.phone)
+                    
+                await session.commit()
+                
+                logger.info(f"Updated user with ID: {user_id}")
+                return Response(status_code=status.HTTP_200_OK)
+                
+
+        @self.app.delete("/users/{user_id}", tags=["users"], status_code=status.HTTP_200_OK)
+        async def delete_user(user_id: UUID):
+            async with self.data_base.async_session as session:
+                result = await session.execute(
+                    select(
+                        User
+                    )
+                    .where(User.id == user_id)
+                )
+                user = result.scalar_one_or_none()
+
+                if not user:
+                    raise HTTPException(status_code=404, detail="User not found")
+                
+                await session.delete(user)
+                await session.commit()
+
+                logger.info(f"Deleted user with ID: {user_id}")
+                return Response(status_code=status.HTTP_200_OK)
+            
