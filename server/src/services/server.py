@@ -1,6 +1,6 @@
 import asyncio
 from typing import Any, Iterable, List, Optional
-from uuid import UUID
+from uuid import UUID as PythonUUID
 
 import uvicorn
 from fastapi import (
@@ -68,7 +68,7 @@ class Server:
 
         logger.info(self.data_base.engine)
 
-        await serve()
+        await server.serve()
 
     
     async def is_attribute_unique(
@@ -76,7 +76,7 @@ class Server:
             session: AsyncSession,
             attribute: Any,
             value: Any,
-            exclude_id: Optional[UUID | str] = None,
+            exclude_id: Optional[PythonUUID | str] = None,
             ) -> bool:
             model = attribute.class_
             if not hasattr(model, '__tablename__'):
@@ -154,7 +154,7 @@ class Server:
 
 
         @self.app.get("/users/{user_id}", tags=["users"], status_code=status.HTTP_200_OK)
-        async def get_user_by_id(user_id: UUID) -> UserDTO:
+        async def get_user_by_id(user_id: PythonUUID) -> UserDTO:
             async with self.data_base.async_session() as session:
                 query = (
                     select (
@@ -199,7 +199,7 @@ class Server:
             
         
         @self.app.patch("/users/{user_id}", tags=["users"], status_code=status.HTTP_200_OK)
-        async def update_user(user_id: UUID, update_data: UserUpdateDTO):
+        async def update_user(user_id: PythonUUID, update_data: UserUpdateDTO):
             async with self.data_base.async_session() as session:
                 result = await session.execute(
                     select(
@@ -234,7 +234,7 @@ class Server:
                 
 
         @self.app.delete("/users/{user_id}", tags=["users"], status_code=status.HTTP_200_OK)
-        async def delete_user(user_id: UUID):
+        async def delete_user(user_id: PythonUUID):
             async with self.data_base.async_session() as session:
                 result = await session.execute(
                     select(
