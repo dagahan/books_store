@@ -34,10 +34,9 @@ class Server:
         server = uvicorn.Server(self.uvicorn_config)
         await self.data_base.init_alchemy_engine()
         await self._register_routes()
-        # await self.data_base.drop_all_tables() # dropping all of tables and data.
-        # await self.data_base.create_tables()
 
         logger.info(self.data_base.engine)
+        
         await server.serve()
 
 

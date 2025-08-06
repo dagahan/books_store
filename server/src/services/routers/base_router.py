@@ -1,4 +1,4 @@
-from typing import Any, Iterable, List, Optional
+from typing import Any, Iterable, List, Optional, Union
 from uuid import UUID as PythonUUID
 
 from loguru import logger

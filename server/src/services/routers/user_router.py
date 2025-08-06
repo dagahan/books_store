@@ -9,11 +9,21 @@ def get_user_router(db: DataBase) -> APIRouter:
     @router.get("/", status_code=status.HTTP_200_OK)
     async def get_all_users(
         session = Depends(db.get_session)
-    ) -> List[UserDTO]:
-        result = await session.execute(select(User))
-        users = result.scalars().all()
+    ) -> Union[UserDTO | List[UserDTO]]:
+        
+        try:
+            result = await session.execute(
+                select(User)
+            )
+            users = result.scalars().all()
+
+        except Exception as ex:
+            logger.warning(f"Couldn't select an object. {ex}")
+            raise HTTPException(status_code=404, detail=f"There are no users")
+
         if not users:
             raise HTTPException(status_code=404, detail="There are no users")
+        
         return base_router.validate_models_by_schema(users, UserDTO)
 
 
@@ -22,10 +32,21 @@ def get_user_router(db: DataBase) -> APIRouter:
         user_id: PythonUUID,
         session = Depends(db.get_session)
     ) -> UserDTO:
-        result = await session.execute(select(User).where(User.id == user_id))
-        user = result.scalars().first()
+        
+        try:
+            result = await session.execute(
+                select(User)
+                .where(User.id == user_id)
+            )
+            user = result.scalars().first()
+
+        except Exception as ex:
+            logger.warning(f"Couldn't select an object. {ex}")
+            raise HTTPException(status_code=404, detail=f"User not found")        
+
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
+        
         return base_router.validate_models_by_schema(user, UserDTO)
 
 
@@ -34,8 +55,10 @@ def get_user_router(db: DataBase) -> APIRouter:
         user_data: UserCreateDTO,
         session = Depends(db.get_session)
     ):
+        
         if user_data.email and not await base_router.is_attribute_unique(session, User.email, user_data.email):
             raise base_router.http_ex_attribute_is_not_unique(User.email, "User")
+        
         if user_data.phone and not await base_router.is_attribute_unique(session, User.phone, user_data.phone):
             raise base_router.http_ex_attribute_is_not_unique(User.phone, "User")
 
@@ -48,7 +71,9 @@ def get_user_router(db: DataBase) -> APIRouter:
         )
         session.add(user)
         await session.commit()
-        return {"message": {"UUID": str(user.id)}}
+
+        logger.debug(f"Created user with UUID {user.id}")
+        return {"message": {"UUID": user.id}}
 
 
     @router.patch("/{user_id}", status_code=status.HTTP_200_OK)
@@ -57,9 +82,18 @@ def get_user_router(db: DataBase) -> APIRouter:
         update_data: UserUpdateDTO,
         session = Depends(db.get_session)
     ):
-        result = await session.execute(
-            select(User).where(User.id == user_id).options(noload("*"))
-        )
+        try:
+            result = await session.execute(
+                select(User)
+                .where(User.id == user_id)
+                .options(noload("*"))
+            )
+            user = result.scalars().first()
+
+        except Exception as ex:
+            logger.warning(f"Couldn't select an object. {ex}")
+            raise HTTPException(status_code=404, detail=f"User not found")
+
         user = result.scalar_one_or_none()
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
@@ -67,12 +101,14 @@ def get_user_router(db: DataBase) -> APIRouter:
         data = update_data.model_dump(exclude_unset=True)
         if 'email' in data and not await base_router.is_attribute_unique(session, User.email, data['email'], exclude_id=user_id):
             raise base_router.http_ex_attribute_is_not_unique(User.email, "User")
+        
         if 'phone' in data and not await base_router.is_attribute_unique(session, User.phone, data['phone'], exclude_id=user_id):
             raise base_router.http_ex_attribute_is_not_unique(User.phone, "User")
 
         for field, value in data.items():
             setattr(user, field, value)
         await session.commit()
+
         return Response(status_code=status.HTTP_200_OK)
 
 
@@ -81,10 +117,20 @@ def get_user_router(db: DataBase) -> APIRouter:
         user_id: PythonUUID,
         session = Depends(db.get_session)
     ):
-        result = await session.execute(select(User).where(User.id == user_id))
-        user = result.scalars().first()
+        try:
+            result = await session.execute(
+                select(User)
+                .where(User.id == user_id)
+            )
+            user = result.scalars().first()
+
+        except Exception as ex:
+            logger.warning(f"Couldn't select an object. {ex}")
+            raise HTTPException(status_code=404, detail=f"User not found")
+
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
+        
         await session.delete(user)
         await session.commit()
         return Response(status_code=status.HTTP_200_OK)

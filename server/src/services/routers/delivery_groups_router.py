@@ -9,14 +9,11 @@ def get_delivery_group_router(db: DataBase) -> APIRouter:
     @router.get("/", status_code=status.HTTP_200_OK)
     async def get_all_delivery_groups(
         session = Depends(db.get_session)
-    ) -> List[DeliveryGroupDTO]:
-        result = await session.execute(
-                select
-                (
-                    DeliveryGroup
-                )
-            )
+    ) -> Union[List[DeliveryGroupDTO] | DeliveryGroupDTO]:
         
+        result = await session.execute(
+            select(DeliveryGroup)
+        )
         delivery_groups = result.scalars().all()
 
         if not delivery_groups:
@@ -30,14 +27,11 @@ def get_delivery_group_router(db: DataBase) -> APIRouter:
         delivery_group_id: PythonUUID,
         session = Depends(db.get_session)
     ) -> DeliveryGroupDTO:
-        result = await session.execute(
-            select
-                (
-                    DeliveryGroup
-                )
-                .where(delivery_group.id == delivery_group_id)
-            )
         
+        result = await session.execute(
+            select(DeliveryGroup)
+            .where(delivery_group.id == delivery_group_id)
+        )
         delivery_group = result.scalars().first()
 
         if not delivery_group:
@@ -51,6 +45,7 @@ def get_delivery_group_router(db: DataBase) -> APIRouter:
         delivery_group_data: DeliveryGroupCreateDTO,
         session = Depends(db.get_session)
     ):
+        
         if delivery_group_data.email and not await base_router.is_attribute_unique(session, delivery_group.email, delivery_group_data.email):
             raise base_router.http_ex_attribute_is_not_unique(delivery_group.email, "delivery_group")
         
@@ -66,8 +61,9 @@ def get_delivery_group_router(db: DataBase) -> APIRouter:
         )
 
         session.add(delivery_group)
-
         await session.commit()
+
+        logger.debug(f"Created delivery_group with UUID {delivery_group.id}")
         return {"message": {"UUID": str(delivery_group.id)}}
 
 
@@ -77,14 +73,12 @@ def get_delivery_group_router(db: DataBase) -> APIRouter:
         update_data: DeliveryGroupUpdateDTO,
         session = Depends(db.get_session)
     ):
+        
         result = await session.execute(
-            select
-                (
-                    DeliveryGroup
-                )
-                .where(delivery_group.id == delivery_group_id)
-                .options(noload("*"))
-            )
+            select(DeliveryGroup)
+            .where(delivery_group.id == delivery_group_id)
+            .options(noload("*"))
+        )
         
         delivery_group = result.scalar_one_or_none()
         if not delivery_group:
@@ -109,13 +103,11 @@ def get_delivery_group_router(db: DataBase) -> APIRouter:
         delivery_group_id: PythonUUID,
         session = Depends(db.get_session)
     ):
+        
         result = await session.execute(
-            select
-                (
-                    DeliveryGroup
-                )
-                .where(delivery_group.id == delivery_group_id)
-            )
+            select(DeliveryGroup)
+            .where(delivery_group.id == delivery_group_id)
+        )
         
         delivery_group = result.scalars().first()
 

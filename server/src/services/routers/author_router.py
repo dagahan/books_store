@@ -9,9 +9,11 @@ def get_author_router(db: DataBase) -> APIRouter:
     @router.get("/", status_code=status.HTTP_200_OK)
     async def get_all_authors(
         session = Depends(db.get_session)
-    ) -> Optional[List[AuthorDTO] | AuthorDTO]:
-        query = select(Author)
-        result = await session.execute(query)
+    ) -> Union[List[AuthorDTO] | AuthorDTO]:
+        
+        result = await session.execute(
+            select(Author)
+        )
         row_items = result.scalars().all()
 
         if not row_items:
@@ -25,8 +27,11 @@ def get_author_router(db: DataBase) -> APIRouter:
         author_id: PythonUUID,
         session = Depends(db.get_session)
     ) -> AuthorDTO:
-        query = select(Author).where(Author.id == author_id)
-        result = await session.execute(query)
+        
+        result = await session.execute(
+            select(Author)
+            .where(Author.id == author_id)
+        )
         author = result.scalars().first()
 
         if not author:
@@ -45,6 +50,7 @@ def get_author_router(db: DataBase) -> APIRouter:
 
         session.add(new_author)
         await session.commit()
+        
         logger.info(f"Created new author with ID: {new_author.id}")
         return {"message": {"UUID": f"{new_author.id}"}}
 
@@ -81,7 +87,8 @@ def get_author_router(db: DataBase) -> APIRouter:
         session = Depends(db.get_session)
     ):
         result = await session.execute(
-            select(Author).where(Author.id == author_id)
+            select(Author)
+            .where(Author.id == author_id)
         )
         author = result.scalar_one_or_none()
 
