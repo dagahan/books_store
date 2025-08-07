@@ -3,7 +3,14 @@ from enum import Enum
 from typing import List, Optional
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, SecretStr
+
+
+
+class UserRole(str, Enum):
+    user = "user"
+    admin = "admin"
+    seller = "seller"
 
 
 class PaymentMethodDTO(str, Enum):

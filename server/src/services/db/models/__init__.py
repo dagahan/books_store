@@ -6,7 +6,9 @@ from .base_model import (
     money,
     PaymentMethodEnum,
     DeliveryStatusEnum,
-    DeliveryGroupStatusEnum
+    DeliveryGroupStatusEnum,
+    UserRole,
+    Password,
 )
 
 from .author import Author
@@ -31,6 +33,8 @@ __all__ = [
     "PaymentMethodEnum",
     "DeliveryStatusEnum",
     "DeliveryGroupStatusEnum",
+    "UserRole",
+    "Password",
     
     # Model classes
     "Author",

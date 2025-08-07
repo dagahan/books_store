@@ -82,30 +82,29 @@ def get_user_router(db: DataBase) -> APIRouter:
         update_data: UserUpdateDTO,
         session = Depends(db.get_session)
     ):
+        update_data = update_data.model_dump(exclude_unset=True)
         try:
             result = await session.execute(
                 select(User)
                 .where(User.id == user_id)
                 .options(noload("*"))
             )
-            user = result.scalars().first()
+            user = result.scalar_one_or_none()
 
         except Exception as ex:
             logger.warning(f"Couldn't select an object. {ex}")
             raise HTTPException(status_code=404, detail=f"User not found")
 
-        user = result.scalar_one_or_none()
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
 
-        data = update_data.model_dump(exclude_unset=True)
-        if 'email' in data and not await base_router.is_attribute_unique(session, User.email, data['email'], exclude_id=user_id):
+        if 'email' in update_data and not await base_router.is_attribute_unique(session, User.email, update_data['email'], exclude_id=user_id):
             raise base_router.http_ex_attribute_is_not_unique(User.email, "User")
         
-        if 'phone' in data and not await base_router.is_attribute_unique(session, User.phone, data['phone'], exclude_id=user_id):
+        if 'phone' in update_data and not await base_router.is_attribute_unique(session, User.phone, update_data['phone'], exclude_id=user_id):
             raise base_router.http_ex_attribute_is_not_unique(User.phone, "User")
 
-        for field, value in data.items():
+        for field, value in update_data.items():
             setattr(user, field, value)
         await session.commit()
 

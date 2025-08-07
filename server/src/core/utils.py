@@ -7,7 +7,6 @@ from pathlib import Path
 from typing import Any, List, Tuple
 
 import chardet
-from dotenv import load_dotenv
 from loguru import logger
 
 
@@ -79,10 +78,13 @@ class EnvTools:
     @staticmethod
     def load_env_var(variable_name: str) -> Any:
         try:
-            load_dotenv()
-            return os.getenv(variable_name)
+            env_var = os.environ[variable_name]
+            if not env_var:
+                logger.critical(f"Cannot load env var named '{variable_name}'. returning None.")
+
+            return env_var
         except Exception as ex:
-            logger.critical(f"Error with loading env variable\n{ex}")
+            logger.critical(f"Error with loading env variable '{variable_name}'. returning None.\n{ex}")
             return None
         
     
@@ -97,14 +99,26 @@ class EnvTools:
 
 
     @staticmethod
-    def is_running_inside_docker() -> bool:
+    def is_running_inside_docker_compose() -> bool:
         try:
             return EnvTools.load_env_var("RUNNING_INSIDE_DOCKER") == "1"
         except KeyError as ex:
-            logger.error(
+            logger.critical(
                 f"Error with checking if programm running inside docker. Returns default False\n{ex}"
             )
         return False
+    
+
+    @staticmethod
+    def get_service_ip(service_name: str) -> str:
+        if EnvTools.is_running_inside_docker_compose():
+            return f"{service_name}-{EnvTools.load_env_var("COMPOSE_PROJECT_NAME")}"
+        return EnvTools.load_env_var(f"{service_name.upper()}_HOST")
+    
+
+    @staticmethod
+    def get_service_port(service_name: str) -> str:
+        return EnvTools.load_env_var(f"{service_name.upper()}_PORT")
 
 
     @staticmethod

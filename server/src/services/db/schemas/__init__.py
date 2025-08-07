@@ -3,13 +3,22 @@ from .base_schema import (
     TimestampMixin,
     PaymentMethodDTO,
     DeliveryStatusDTO,
-    DeliveryGroupStatusDTO
+    DeliveryGroupStatusDTO,
+    UserRole,
 )
 
 from .author import (
     AuthorDTO,
     AuthorCreateDTO,
     AuthorUpdateDTO
+)
+
+from .jwt import (
+    TokenPayload,
+    LoginRequest,
+    RegisterResponse,
+    LoginResponse,
+    RefreshAccessResponse,
 )
 
 from .user import (
@@ -76,6 +85,12 @@ __all__ = [
     "AuthorDTO",
     "AuthorCreateDTO", 
     "AuthorUpdateDTO",
+
+    "TokenPayload",
+    "LoginRequest",
+    "RegisterResponse",
+    "LoginResponse",
+    "RefreshAccessResponse",
     
     "UserDTO",
     "UserCreateDTO",

@@ -18,8 +18,8 @@ class DataBase:
     def __init__(self,) -> None:
         self.config = ConfigLoader()
         self.engine = None
-        self.db_host = EnvTools.load_env_var("POSTGRES_HOST")
-        self.db_port = EnvTools.load_env_var("POSTGRES_PORT")
+        self.db_host = EnvTools.get_service_ip("postgres")
+        self.db_port = EnvTools.get_service_port("postgres")
         self.db_user = EnvTools.load_env_var("POSTGRES_USER")
         self.db_pwd = EnvTools.load_env_var("POSTGRES_PASSWORD")
         self.db_name = EnvTools.load_env_var("POSTGRES_DB")

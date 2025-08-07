@@ -23,8 +23,8 @@ class Server:
         )
         self.uvicorn_config = uvicorn.Config(
             app=self.app,
-            host=EnvTools.load_env_var("SERVER_HOST"),
-            port=int(EnvTools.load_env_var("SERVER_PORT")),
+            host=EnvTools.get_service_ip(self.config.get("project", "name")),
+            port=int(EnvTools.get_service_port(self.config.get("project", "name"))),
             reload=True,
             log_level="info"
         )
@@ -36,7 +36,7 @@ class Server:
         await self._register_routes()
 
         logger.info(self.data_base.engine)
-        
+
         await server.serve()
 
 
