@@ -1,32 +1,103 @@
-name: alchemy
+name: books_store
 
 
 services:
-  main:
+  nginx:
     build:
-      context: ./main
+      context: ./nginx
       dockerfile: dockerfile
-    image: main
-    container_name: main
+    image: nginx-${COMPOSE_PROJECT_NAME}
+    container_name: nginx-${COMPOSE_PROJECT_NAME}
     env_file: .env
     environment:
       RUNNING_INSIDE_DOCKER: 1
+      COMPOSE_PROJECT_NAME: ${COMPOSE_PROJECT_NAME}
     ports:
-      - "${MAIN_PORT}:${MAIN_PORT}"
+      - "${NGINX_PORT}:${NGINX_PORT}"
     networks:
       - alchemy_net
     restart: ${DOCKER_CONTAINERS_RESTART}
+    develop:
+      watch:
+        - action: rebuild
+          path: ./nginx
+
+
+  authorizer:
+    build:
+      context: ./authorizer
+      dockerfile: dockerfile
+    image: authorizer-${COMPOSE_PROJECT_NAME}
+    container_name: authorizer-${COMPOSE_PROJECT_NAME}
+    env_file: .env
+    environment:
+      RUNNING_INSIDE_DOCKER: 1
+      COMPOSE_PROJECT_NAME: ${COMPOSE_PROJECT_NAME}
+    ports:
+      - "${AUTHORIZER_PORT}:${AUTHORIZER_PORT}"
+    networks:
+      - alchemy_net
+    restart: ${DOCKER_CONTAINERS_RESTART}
+    develop:
+      watch:
+        - action: rebuild
+          path: ./
+
+          
+  server:
+    build:
+      context: ./server
+      dockerfile: dockerfile
+    image: server-${COMPOSE_PROJECT_NAME}
+    container_name: server-${COMPOSE_PROJECT_NAME}
+    env_file: .env
+    environment:
+      RUNNING_INSIDE_DOCKER: 1
+      COMPOSE_PROJECT_NAME: ${COMPOSE_PROJECT_NAME}
+    ports:
+      - "${SERVER_PORT}:${SERVER_PORT}"
+    networks:
+      - alchemy_net
+    restart: ${DOCKER_CONTAINERS_RESTART}
+    develop:
+      watch:
+        - action: rebuild
+          path: ./
+
+
+  valkey:
+    build:
+      context: ./valkey
+      dockerfile: dockerfile
+    image: valkey-${COMPOSE_PROJECT_NAME}
+    container_name: valkey-${COMPOSE_PROJECT_NAME}
+    env_file: .env
+    environment:
+      RUNNING_INSIDE_DOCKER: 1
+      COMPOSE_PROJECT_NAME: ${COMPOSE_PROJECT_NAME}
+    ports:
+      - "${VALKEY_PORT}:${VALKEY_PORT}"
+    networks:
+      - alchemy_net
+    volumes:
+      - ./valkey-data:/var/lib/valkey/data
+    restart: ${DOCKER_CONTAINERS_RESTART}
+    develop:
+      watch:
+        - action: rebuild
+          path: ./
 
 
   postgres:
     build:
       context: ./postgres
       dockerfile: dockerfile
-    image: postgres-alchemy
-    container_name: postgres-alchemy
+    image: postgres-${COMPOSE_PROJECT_NAME}
+    container_name: postgres-${COMPOSE_PROJECT_NAME}
     env_file: .env
     environment:
       RUNNING_INSIDE_DOCKER: 1
+      COMPOSE_PROJECT_NAME: ${COMPOSE_PROJECT_NAME}
     ports:
       - "${POSTGRES_PORT}:${POSTGRES_PORT}"
     networks:
@@ -39,11 +110,11 @@ services:
     volumes:
       - ./postgres-data:/var/lib/postgresql/data
     restart: ${DOCKER_CONTAINERS_RESTART}
+    develop:
+      watch:
+        - action: rebuild
+          path: ./
 
-
-volumes:
-  postgres_data:
-    driver: local
 
 networks:
   alchemy_net:

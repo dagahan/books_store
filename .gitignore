@@ -189,6 +189,7 @@ cython_debug/
 
 # volumes
 **postgres-data/
+**valkey-data/
 **prometheus-data/
 **grafana-data/
 
@@ -202,6 +203,7 @@ cython_debug/
 **/.ruff_cache
 **/recived_images
 **/rendered_images
+**/*.pem
 
 
 # IDE files
