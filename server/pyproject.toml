@@ -19,6 +19,7 @@ dependencies = [
     "pyjwt==1.7.1",
     "pydantic==2.11.7",
     "tabulate==0.9.0",
+    "bs_models @ git+https://github.com/dagahan/bs_models.git"
 ]
 
 

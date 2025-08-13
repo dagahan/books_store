@@ -11,7 +11,7 @@ def get_user_router(db: DataBase) -> APIRouter:
     @router.post("/register", status_code=201)
     async def register(user_data: UserCreateDTO,
         session = Depends(db.get_session)
-    ) -> Dict[str, str]:
+    ) -> RegisterResponse:
         
         if user_data.email and not await base_router.is_attribute_unique(session, User.email, user_data.email):
             raise base_router.http_ex_attribute_is_not_unique(User.email, "User")

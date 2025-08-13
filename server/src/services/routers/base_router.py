@@ -11,8 +11,8 @@ from fastapi import APIRouter, HTTPException, Response, status, Depends
 from sqlalchemy.orm import noload
 
 from src.services.db.database import DataBase
-from src.services.db.schemas import *
-from src.services.db.models import *
+from schemas import *
+from models import *
 
 
 class BaseRouter:
