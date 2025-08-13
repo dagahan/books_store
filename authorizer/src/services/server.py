@@ -10,6 +10,7 @@ from src.core.config import ConfigLoader
 from src.core.utils import EnvTools
 from src.services.routers import *
 from src.services.routers.user_router import *
+from src.services.routers.token_router import *
 
 
 class Server:
@@ -49,4 +50,5 @@ class Server:
             return {"message": f"Hello! This is {self.config.get("project", "name")} service!"}
 
         self.app.include_router(get_user_router(self.data_base))
+        self.app.include_router(get_token_router(self.data_base))
             

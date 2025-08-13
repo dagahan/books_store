@@ -9,13 +9,14 @@ from fastapi import APIRouter, HTTPException, Response, status, Depends
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import noload
+from src.core.config import ConfigLoader
 
 from src.services.db.database import DataBase
 from src.services.jwt.jwt_parser import JwtParser
-from schemas import *
-from models import *
+from bs_schemas import *
+from bs_models import *
 from src.services.auth.sessions_manager import *
+from src.services.auth.auth_service import *
 from src.services.jwt import *
 
 

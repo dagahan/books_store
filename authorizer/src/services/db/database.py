@@ -8,10 +8,9 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
     create_async_engine,
 )
-
 from src.core.config import ConfigLoader
 from src.core.utils import EnvTools
-from models import Base
+from bs_models import Base
 
 
 class DataBase:

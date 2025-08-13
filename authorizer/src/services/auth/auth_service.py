@@ -5,9 +5,10 @@ from fastapi import HTTPException, status
 from valkey import Valkey
 from jose import JWTError, jwt
 
-from src.services.jwt import JwtParser
+from src.services.jwt.jwt_parser import JwtParser
 from src.services.db.database import DataBase
-from src.services.db.models import User, UserRole
+from bs_models import User, UserRole
+from bs_schemas import ResponseRefresh
 from src.services.auth.sessions_manager import SessionsManager
 from src.core.utils import EnvTools
 
@@ -49,17 +50,55 @@ class AuthService:
                 
             return user
 
+    
+    async def validate_access_token(self, access_token: str) -> bool:
+        try:
+            payload = self.jwt_parser.validate_token(access_token)
+
+            user_id = payload.get("sub")
+            session_id = payload.get("sid")
+            expire = payload.get("exp")
+
+            if not session_id or not user_id or not expire:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Invalid token payload"
+                )
+
+            if not self.sessions_manager.is_session_exists(session_id):
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Session expired"
+                )
+
+            session_data = self.sessions_manager.get_session_data(session_id)
+            session_user_id = session_data.get("user_id")
+            if session_user_id and str(session_user_id) != str(user_id):
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Token does not match session user"
+                )
+
+            return True
+
+        except JWTError as ex:
+            logger.error(f"Access token error: {ex}")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid access token"
+            )
+
 
     async def logout(self, session_id: str):
         self.sessions_manager.delete_session(session_id)
         return {"message": "Session terminated"}
 
 
-    async def get_access_token_by_refresh_token(self, refresh_token: str) -> dict:
+    async def get_access_token_by_refresh_token(self, refresh_token: str) -> str:
         try:
             payload = self.jwt_parser.validate_token(refresh_token)
             
-            if not payload.get("refresh"):
+            if not payload.get("ref"):
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
                     detail="Invalid token type"
@@ -74,24 +113,18 @@ class AuthService:
                     detail="Invalid token payload"
                 )
                 
-            if not self.sessions_manager.session_exists(session_id):
+            if not self.sessions_manager.is_session_exists(session_id):
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail="Session expired"
                 )
                 
-            self.sessions_manager.refresh_session(session_id)
+            self.sessions_manager.create_session(session_id)
             
-            access_token = self.jwt_parser.generate_access_token(
+            return self.jwt_parser.generate_access_token(
                 user_id=user_id, 
                 session_id=session_id
             )
-            
-            return {
-                "access_token": access_token,
-                "token_type": "bearer",
-                "expires_in": self.access_token_expire_minutes * 60
-            }
             
         except JWTError as e:
             logger.error(f"Refresh token error: {e}")
@@ -111,13 +144,13 @@ class AuthService:
                             )
                 admin_id = result.scalar_one_or_none()
                 if not admin_id:
-                    return HTTPException(
+                    raise HTTPException(
                         status_code=status.HTTP_404_NOT_FOUND,
                         detail="Admin not found"
                     )
 
                 if admin_id.role != UserRole.admin:
-                    return HTTPException(
+                    raise HTTPException(
                         status_code=status.HTTP_403_FORBIDDEN,
                         detail="Admin privileges required"
                     )
@@ -130,7 +163,7 @@ class AuthService:
                 user = result.scalar_one_or_none()
                 
                 if not user:
-                    return HTTPException(
+                    raise HTTPException(
                         status_code=status.HTTP_404_NOT_FOUND,
                         detail="User not found"
                     )
@@ -145,7 +178,7 @@ class AuthService:
             
             except Exception as ex:
                 logger.error(f"Couldn't ban user during the exception: {ex}")
-                return HTTPException(status_code=500, detail="Couldn't ban user during the server error.")
+                raise HTTPException(status_code=500, detail="Couldn't ban user during the server error.")
         
 
 

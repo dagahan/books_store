@@ -36,4 +36,9 @@ class SessionsManager:
         session_key = f"session:{session_id}"
         return self.valkey_service.exists(session_key) == 1
 
+
+    def get_session_data(self, session_id: str) -> dict:
+        session_key = f"session:{session_id}"
+        return self.valkey_service.hgetall(session_key) or {}
+
         
