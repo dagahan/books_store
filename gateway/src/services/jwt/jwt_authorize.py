@@ -14,7 +14,7 @@ class JWTBearer(HTTPBearer):
         pass
 
 
-    def call(self, request: Request) -> TokenPayload:
+    def verify(self, request: Request) -> TokenPayload:
       
         payload = validate_token(credentials.credentials)
         

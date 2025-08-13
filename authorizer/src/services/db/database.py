@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import (
 
 from src.core.config import ConfigLoader
 from src.core.utils import EnvTools
-from src.services.db.models.base_model import Base
+from models import Base
 
 
 class DataBase:

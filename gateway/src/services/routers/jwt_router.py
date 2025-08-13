@@ -7,10 +7,29 @@ def get_user_router() -> APIRouter:
 
 
     @app.post("/register", status_code=201)
-    async def register(user_data: LoginRequest):
-        """Регистрация пользователя (заглушка)"""
-        # В реальной системе: хеширование пароля, сохранение в БД
-        return {"user_id": 1, "username": user_data.username}
+    async def register(user_data: UserCreateDTO,
+        session = Depends(db.get_session)
+    ):
+        
+        if user_data.email and not await base_router.is_attribute_unique(session, User.email, user_data.email):
+            raise base_router.http_ex_attribute_is_not_unique(User.email, "User")
+        
+        if user_data.phone and not await base_router.is_attribute_unique(session, User.phone, user_data.phone):
+            raise base_router.http_ex_attribute_is_not_unique(User.phone, "User")
+
+        user = User(
+            first_name=user_data.first_name.capitalize(),
+            last_name=user_data.last_name.capitalize(),
+            middle_name=user_data.middle_name.capitalize(),
+            email=user_data.email,
+            phone=user_data.phone,
+        )
+        session.add(user)
+        await session.commit()
+
+        logger.debug(f"Created user with UUID {user.id}")
+        return {"message": {"UUID": user.id}}
+    
 
     @app.post("/login")
     async def login(credentials: LoginRequest):

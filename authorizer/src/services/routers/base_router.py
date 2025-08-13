@@ -13,8 +13,8 @@ from sqlalchemy.orm import noload
 
 from src.services.db.database import DataBase
 from src.services.jwt.jwt_parser import JwtParser
-from src.services.db.schemas import *
-from src.services.db.models import *
+from schemas import *
+from models import *
 from src.services.auth.sessions_manager import *
 from src.services.jwt import *
 

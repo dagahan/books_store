@@ -1,5 +1,4 @@
 from .base_router import *
-from src.services.jwt.jwt_parser import JwtParser
 
 
 def get_user_router(db: DataBase) -> APIRouter:
