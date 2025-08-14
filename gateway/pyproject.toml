@@ -1,5 +1,5 @@
 [project]
-name = "authorizer"
+name = "gateway"
 version = "0.1.0"
 requires-python = "==3.13.5"
 dependencies = [
@@ -20,6 +20,10 @@ dependencies = [
     "psycopg[binary]",
     "asyncpg",
     "alembic==1.12.0",
+    "httpx[http2]==0.28.1",
+    "python-jose[cryptography]==3.3.0",
+    "cryptography==42.0.8",
+    "bs_models @ git+https://github.com/dagahan/bs_models.git",
     ]
 
 

@@ -2,25 +2,46 @@ name: books_store
 
 
 services:
-  # nginx:
-  #   build:
-  #     context: ./nginx
-  #     dockerfile: dockerfile
-  #   image: nginx-${COMPOSE_PROJECT_NAME}
-  #   container_name: nginx-${COMPOSE_PROJECT_NAME}
-  #   env_file: .env
-  #   environment:
-  #     RUNNING_INSIDE_DOCKER: 1
-  #     COMPOSE_PROJECT_NAME: ${COMPOSE_PROJECT_NAME}
-  #   ports:
-  #     - "${NGINX_PORT}:${NGINX_PORT}"
-  #   networks:
-  #     - alchemy_net
-  #   restart: ${DOCKER_CONTAINERS_RESTART}
-  #   develop:
-  #     watch:
-  #       - action: rebuild
-  #         path: ./nginx
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: dockerfile
+    image: nginx-${COMPOSE_PROJECT_NAME}
+    container_name: nginx-${COMPOSE_PROJECT_NAME}
+    env_file: .env
+    environment:
+      RUNNING_INSIDE_DOCKER: 1
+      COMPOSE_PROJECT_NAME: ${COMPOSE_PROJECT_NAME}
+    ports:
+      - "${NGINX_PORT}:${NGINX_PORT}"
+    networks:
+      - alchemy_net
+    restart: ${DOCKER_CONTAINERS_RESTART}
+    develop:
+      watch:
+        - action: rebuild
+          path: ./nginx
+
+
+  gateway:
+    build:
+      context: ./gateway
+      dockerfile: dockerfile
+    image: gateway-${COMPOSE_PROJECT_NAME}
+    container_name: gateway-${COMPOSE_PROJECT_NAME}
+    env_file: .env
+    environment:
+      RUNNING_INSIDE_DOCKER: 1
+      COMPOSE_PROJECT_NAME: ${COMPOSE_PROJECT_NAME}
+    ports:
+      - "${GATEWAY_PORT}:${GATEWAY_PORT}"
+    networks:
+      - alchemy_net
+    restart: ${DOCKER_CONTAINERS_RESTART}
+    develop:
+      watch:
+        - action: rebuild
+          path: ./gateway
 
 
   authorizer:

@@ -8,22 +8,24 @@ from valkey import Valkey
 
 from src.core.config import ConfigLoader
 from src.core.utils import EnvTools
-from src.services.routers import *
-from src.services.routers.jwt_router import *
+from src.services.db.database import DataBase
+from src.services.routers.gateway_router import *
 
 
 class Server:
     def __init__(self) -> None:
         self.config = ConfigLoader()
+        self.data_base = DataBase()
         self.app = FastAPI(
             title="Authorizer",
             description="This is test books_store web app.",
             version="0.0.1"
         )
+
         self.uvicorn_config = uvicorn.Config(
             app=self.app,
-            host=EnvTools.load_env_var("AUTHORIZER_HOST"),
-            port=int(EnvTools.load_env_var("AUTHORIZER_PORT")),
+            host=EnvTools.get_service_ip(self.config.get("project", "name")),
+            port=int(EnvTools.get_service_port(self.config.get("project", "name"))),
             reload=True,
             log_level="info"
         )
@@ -44,7 +46,5 @@ class Server:
         def home():
             return {"message": f"Hello! This is {self.config.get("project", "name")} service!"}
 
-        # self.app.include_router(get_user_router(self.data_base))
-        # self.app.include_router(get_author_router(self.data_base))
-        # self.app.include_router(get_delivery_group_router(self.data_base))
+        self.app.include_router(get_gateway_router(self.data_base))
             

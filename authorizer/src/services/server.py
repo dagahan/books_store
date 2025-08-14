@@ -8,7 +8,7 @@ from valkey import Valkey
 
 from src.core.config import ConfigLoader
 from src.core.utils import EnvTools
-from src.services.routers import *
+from src.services.db.database import DataBase
 from src.services.routers.user_router import *
 from src.services.routers.token_router import *
 

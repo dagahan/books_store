@@ -22,7 +22,7 @@ dependencies = [
     "python-jose[cryptography]==3.3.0",
     "cryptography==42.0.8",
     "dotenv==0.9.9",
-    "bs_models @ git+https://github.com/dagahan/bs_models.git"
+    "bs_models @ git+https://github.com/dagahan/bs_models.git",
     ]
 
 
