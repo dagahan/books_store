@@ -16,7 +16,7 @@ class MethodTools:
 
 
     @staticmethod
-    def get_method_info(stack_level: int =+ 1) -> Tuple[str, str, int]:
+    def get_method_info(stack_level: int = 1) -> Tuple[str, str, int]:
         try:
             current_stack = stack()
             if not len(current_stack) > stack_level:
@@ -112,7 +112,7 @@ class EnvTools:
     @staticmethod
     def get_service_ip(service_name: str) -> str:
         if EnvTools.is_running_inside_docker_compose():
-            return f"{service_name}-{EnvTools.load_env_var("COMPOSE_PROJECT_NAME")}"
+            return f"{service_name}-{EnvTools.load_env_var('COMPOSE_PROJECT_NAME')}"
         return EnvTools.load_env_var(f"{service_name.upper()}_HOST")
     
 

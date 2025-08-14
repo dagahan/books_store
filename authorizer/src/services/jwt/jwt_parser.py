@@ -12,6 +12,7 @@ from jose import JWTError, jwt
 from pydantic import BaseModel
 from valkey import Valkey
 from bs_schemas import AccessPayload, RefreshPayload
+from jose.exceptions import ExpiredSignatureError
 
 
 class JwtParser:
@@ -46,6 +47,28 @@ class JwtParser:
         
         except JWTError as ex:
             logger.error(f"JWT validation error: {ex}")
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+
+
+    def decode_token(self, token: str) -> Dict[str, Any]:
+        """
+        Universal token decoding (for access and refresh).
+        Returns payload (dict) on success, throws HttpException (401) on error.
+        """
+        try:
+            payload = jwt.decode(token, self.public_key, algorithms=[self.algorithm])
+            return payload  # dict
+
+        except ExpiredSignatureError as ex:
+            logger.debug(f"Token expired: {ex}")
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token expired")
+
+        except JWTError as ex:
+            logger.debug(f"JWT validation error: {ex}")
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+
+        except Exception as ex:
+            logger.exception(f"Unexpected error while decoding token: {ex}")
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
         
 

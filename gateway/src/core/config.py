@@ -1,5 +1,6 @@
 import tomllib
 from typing import Any
+from pathlib import Path
 
 import colorama
 from loguru import logger
@@ -22,7 +23,18 @@ class ConfigLoader:
     @classmethod
     def _load(cls) -> None:
         try:
-            with open("pyproject.toml", "rb") as f:
+            start_dir = Path(__file__).resolve().parent
+            pyproject_path = None
+            for parent in [start_dir, *start_dir.parents]:
+                candidate = parent / "pyproject.toml"
+                if candidate.exists():
+                    pyproject_path = candidate
+                    break
+
+            if pyproject_path is None:
+                raise FileNotFoundError("pyproject.toml not found from gateway/src/core/config.py upwards")
+
+            with open(pyproject_path, "rb") as f:
                 cls.__config = tomllib.load(f)
             EnvTools.set_env_var("CONFIG_LOADED", "1")
         except Exception as error:

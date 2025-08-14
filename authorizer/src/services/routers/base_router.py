@@ -10,6 +10,7 @@ from fastapi import APIRouter, HTTPException, Response, status, Depends
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.core.config import ConfigLoader
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 from src.services.db.database import DataBase
 from src.services.jwt.jwt_parser import JwtParser
@@ -23,6 +24,35 @@ from src.services.jwt import *
 class BaseRouter:
     def __init__(self, db: DataBase):
         self.db = db
+
+
+    async def find_user_by_any_credential(self, session: AsyncSession, user_data: Any) -> User:
+        if user_data.user_name:
+            query = select(
+                User
+            ).where(User.user_name == user_data.user_name)
+
+        elif user_data.email:
+            query = select(
+                User
+            ).where(User.email == user_data.email)
+
+        elif user_data.phone:
+            query = select(
+                User
+            ).where(User.phone == user_data.phone)
+
+        else:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                                detail="Login (user_name, email or phone) is required")
+
+        result = await session.execute(query)
+        user = result.scalar_one_or_none()
+
+        if not user:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+
+        return user
 
 
     async def is_attribute_unique(

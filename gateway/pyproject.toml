@@ -38,5 +38,4 @@ ignore = ["W293", "F403", "F405"]
 
 
 [jwt]
-private_key = "certs/jwt-private.pem"
 public_key = "certs/jwt-public.pem"

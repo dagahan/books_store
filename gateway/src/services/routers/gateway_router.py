@@ -13,15 +13,29 @@ def get_gateway_router(db: DataBase) -> APIRouter:
     async def proxy(
         endpoint_path: str,
         request: Request,
-        token: Optional[str] = Depends(base_router.get_bearer_token),
+        credentials: HTTPAuthorizationCredentials = Depends(HTTPBearer(auto_error=False)),
     ):
         if not base_router.is_public_endpoint(request.method, endpoint_path):
-            if not token:
+            if credentials is None or not credentials.credentials:
                 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing Authorization")
 
-            token_payload = auth_service.validate_access_token(token)
-            if not token_payload:
-                raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+            access_token = credentials.credentials
+
+            try:
+                payload = jwt_parser.decode_token(access_token)
+            except HTTPException:
+                raise
+            except Exception as ex:
+                logger.debug(f"Invalid access token in proxy: {ex}")
+                raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired access token")
+
+            sid = payload.get("sid")
+            if not sid:
+                logger.debug(f"Access token missing session id (sid) claim: {payload}")
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Access token missing session id (sid)")
+
+            if not sessions_manager.is_session_exists(sid):
+                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Session expired")
 
         service_address = base_router.map_path_to_service_address(endpoint_path)
         if not service_address:

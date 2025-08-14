@@ -64,27 +64,6 @@ services:
         - action: rebuild
           path: ./
 
-          
-  # server:
-  #   build:
-  #     context: ./server
-  #     dockerfile: dockerfile
-  #   image: server-${COMPOSE_PROJECT_NAME}
-  #   container_name: server-${COMPOSE_PROJECT_NAME}
-  #   env_file: .env
-  #   environment:
-  #     RUNNING_INSIDE_DOCKER: 1
-  #     COMPOSE_PROJECT_NAME: ${COMPOSE_PROJECT_NAME}
-  #   ports:
-  #     - "${SERVER_PORT}:${SERVER_PORT}"
-  #   networks:
-  #     - alchemy_net
-  #   restart: ${DOCKER_CONTAINERS_RESTART}
-  #   develop:
-  #     watch:
-  #       - action: rebuild
-  #         path: ./
-
 
   valkey:
     build:

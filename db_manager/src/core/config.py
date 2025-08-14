@@ -1,7 +1,9 @@
 import tomllib
 from typing import Any
+from pathlib import Path
 
 import colorama
+import sys
 from loguru import logger
 
 from src.core.utils import EnvTools, MethodTools
@@ -22,9 +24,17 @@ class ConfigLoader:
     @classmethod
     def _load(cls) -> None:
         try:
-            with open("pyproject.toml", "rb") as f:
+            if hasattr(sys, 'ps1') or 'ipykernel' in sys.modules:
+                cls.project_root = Path().resolve()
+            else:
+                cls.project_root = Path(__file__).resolve().parents[2]
+
+            cls.pyproject_path = cls.project_root / "pyproject.toml"
+
+            with open(cls.pyproject_path, "rb") as f:
                 cls.__config = tomllib.load(f)
             EnvTools.set_env_var("CONFIG_LOADED", "1")
+            
         except Exception as error:
             logger.critical("Config load failed: {error}", error=error)
             raise

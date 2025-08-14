@@ -15,6 +15,7 @@ from urllib.parse import urlparse
 from src.services.auth.sessions_manager import SessionsManager
 
 from src.services.db.database import DataBase
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from bs_schemas import *
 from bs_models import *
 from src.core.config import ConfigLoader

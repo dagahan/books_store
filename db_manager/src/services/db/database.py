@@ -11,27 +11,38 @@ from sqlalchemy.ext.asyncio import (
 
 from src.core.config import ConfigLoader
 from src.core.utils import EnvTools
-from models.base_model import Base
+from bs_models.base_model import Base
 
 
 class DataBase:
     def __init__(self,) -> None:
         self.config = ConfigLoader()
         self.engine = None
-        self.db_host = EnvTools.get_service_ip("postgres")
-        self.db_port = EnvTools.get_service_port("postgres")
-        self.db_user = EnvTools.load_env_var("POSTGRES_USER")
-        self.db_pwd = EnvTools.load_env_var("POSTGRES_PASSWORD")
-        self.db_name = EnvTools.load_env_var("POSTGRES_DB")
-        self.engine_config = f"postgresql+asyncpg://{self.db_user}:{self.db_pwd}@{self.db_host}:{self.db_port}/{self.db_name}"
+        self.db_host = None
+        self.db_port = None
+        self.db_user = None
+        self.db_pwd = None
+        self.db_name = None
+        self.engine_config = None
         self.async_session = None
 
 
     async def init_alchemy_engine(self,) -> None:
         logger.info("Starting service..")
+
+        self.db_host = EnvTools.get_service_ip("postgres")
+        self.db_port = EnvTools.get_service_port("postgres")
+        self.db_user = EnvTools.load_env_var("POSTGRES_USER")
+        self.db_pwd = EnvTools.load_env_var("POSTGRES_PASSWORD")
+        self.db_name = EnvTools.load_env_var("POSTGRES_DB")
+
+        self.engine_config = (
+            f"postgresql+asyncpg://{self.db_user}:{self.db_pwd}@{self.db_host}:{self.db_port}/{self.db_name}"
+        )
+        logger.debug(f"{self.engine_config}")
         self.engine = create_async_engine(
             url=self.engine_config,
-            echo=self.config.get("db", "echo"),
+            echo=False,
             pool_size=10, # count of active connections in pool
             max_overflow=20, # max amount of connections
             pool_timeout=15,

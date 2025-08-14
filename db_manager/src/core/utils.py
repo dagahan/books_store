@@ -9,6 +9,9 @@ from typing import Any, List, Tuple
 import chardet
 from loguru import logger
 
+from dotenv import load_dotenv, find_dotenv
+from pathlib import Path
+
 
 class MethodTools:
     def __init__(self) -> None:
@@ -16,7 +19,7 @@ class MethodTools:
 
 
     @staticmethod
-    def get_method_info(stack_level: int =+ 1) -> Tuple[str, str, int]:
+    def get_method_info(stack_level: int = 1) -> Tuple[str, str, int]:
         try:
             current_stack = stack()
             if not len(current_stack) > stack_level:
@@ -78,7 +81,12 @@ class EnvTools:
     @staticmethod
     def load_env_var(variable_name: str) -> Any:
         try:
-            env_var = os.environ[variable_name]
+            dotenv_path = find_dotenv(usecwd=True)
+            if dotenv_path:
+                load_dotenv(dotenv_path=dotenv_path)
+            else:
+                load_dotenv()
+            env_var = os.getenv(variable_name)
             if not env_var:
                 logger.critical(f"Cannot load env var named '{variable_name}'. returning None.")
 
@@ -111,8 +119,11 @@ class EnvTools:
 
     @staticmethod
     def get_service_ip(service_name: str) -> str:
-        if EnvTools.is_running_inside_docker_compose():
-            return f"{service_name}-{EnvTools.load_env_var("COMPOSE_PROJECT_NAME")}"
+        try:
+            if EnvTools.is_running_inside_docker_compose():
+                return f"{service_name}-{EnvTools.load_env_var('COMPOSE_PROJECT_NAME')}"
+        except Exception as ex:
+            pass
         return EnvTools.load_env_var(f"{service_name.upper()}_HOST")
     
 

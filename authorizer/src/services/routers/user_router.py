@@ -6,30 +6,33 @@ def get_user_router(db: DataBase) -> APIRouter:
     sessions_manager = SessionsManager()
     jwt_parser = JwtParser()
     base_router = BaseRouter(db)
+    bearer_scheme = HTTPBearer()
 
 
     @router.post("/register", status_code=201)
-    async def register(user_data: UserCreateDTO,
+    async def register(data: UserCreateDTO,
         session = Depends(db.get_session)
     ) -> RegisterResponse:
         
-        if user_data.email and not await base_router.is_attribute_unique(session, User.email, user_data.email):
+        if data.email and not await base_router.is_attribute_unique(session, User.email, data.email):
             raise base_router.http_ex_attribute_is_not_unique(User.email, "User")
         
-        if user_data.phone and not await base_router.is_attribute_unique(session, User.phone, user_data.phone):
+        if data.phone and not await base_router.is_attribute_unique(session, User.phone, data.phone):
             raise base_router.http_ex_attribute_is_not_unique(User.phone, "User")
 
-        try:
-            hashed_password = Password.hash_password(user_data.password.get_secret_value())
+        if data.user_name and not await base_router.is_attribute_unique(session, User.user_name, data.user_name):
+            raise base_router.http_ex_attribute_is_not_unique(User.user_name, "User")
 
+        try:
             user = User(
-            hashed_password=hashed_password,
-            first_name=user_data.first_name.capitalize(),
-            last_name=user_data.last_name.capitalize(),
-            middle_name=user_data.middle_name.capitalize(),
-            email=user_data.email,
-            phone=user_data.phone,
-            role=user_data.role,
+            user_name=data.user_name,
+            hashed_password=data.password.get_secret_value(),
+            first_name=data.first_name.capitalize(),
+            last_name=data.last_name.capitalize(),
+            middle_name=data.middle_name.capitalize(),
+            email=data.email,
+            phone=data.phone,
+            role=data.role,
             )
 
             session.add(user)
@@ -56,38 +59,15 @@ def get_user_router(db: DataBase) -> APIRouter:
         )
         
 
-    @router.post("/login", status_code=200)
-    async def login(user_data: LoginRequest,
+    @router.post("/login", status_code=201)
+    async def login(data: LoginRequest,
         session = Depends(db.get_session)
         ) -> LoginResponse:
 
         try:
-            if user_data.user_name:
-                query = select(
-                    User
-                ).where(User.email == user_data.user_name)
+            user = await base_router.find_user_by_any_credential(session, data)
 
-            elif user_data.email:
-                query = select(
-                    User
-                ).where(User.email == user_data.email)
-
-            elif user_data.phone:
-                query = select(
-                    User
-                ).where(User.email == user_data.phone)
-
-            else:
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-                                    detail="Login (user_name, email or phone) is required")
-
-            result = await session.execute(query)
-            user = result.scalar_one_or_none()
-
-            if not user:
-                raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
-
-            if not user.verify_password(user_data.password.get_secret_value()):
+            if not user.verify_password(data.password.get_secret_value()):
                 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
 
             if not user.is_active:
@@ -111,8 +91,49 @@ def get_user_router(db: DataBase) -> APIRouter:
             refresh_token=refresh_token,
         )
 
+
+    @router.post("/logout", status_code=200, response_model=LogoutResponse)
+    async def logout(credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
+    session = Depends(db.get_session),) -> LogoutResponse:
+        """
+        Logout: Accepts the access_token, extracts the sid from the token, and deletes the corresponding session.
+        """
+        try:
+            if credentials is None or not credentials.credentials:
+                raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authorization header missing")
+            
+            access_token = credentials.credentials
+
+            try:
+                payload = jwt_parser.decode_token(access_token)
+            except Exception as ex:
+                logger.debug(f"Invalid access token provided to logout: {ex}")
+                raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired access token")
+
+            sid = payload.get("sid")
+            if not sid:
+                logger.debug(f"Access token missing session id (sid) claim: {payload}")
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Access token missing session id (sid)")
+
+            try:
+                deleted = sessions_manager.delete_session(sid)
+            except Exception as ex:
+                logger.exception(f"Error while deleting session {sid} {ex}")
+                raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal server error")
+
+            return LogoutResponse(
+                succsess=True,
+            )
+
+        except HTTPException:
+            raise
+        except Exception as ex:
+            logger.exception(f"Logout error: {ex}")
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal server error")
+
     
 
     return router
+
 
 
