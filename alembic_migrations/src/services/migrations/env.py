@@ -19,7 +19,7 @@ except Exception:
     raise RuntimeError(f".env not found at {dotenv_path}")
 
 from src.services.db.database import Base, DataBase
-from models import *
+from bs_models import *
 
 config = context.config
 

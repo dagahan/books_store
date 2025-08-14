@@ -18,7 +18,7 @@ class JwtParser:
     def __init__(self):
         self.config = ConfigLoader()
         self.private_key = self._read_key("private_key")
-        self.public_key = self._read_key("public_key")
+        self.public_key = EnvTools.load_env_var("public_key")
         self.access_token_expire_minutes = int(EnvTools.load_env_var("ACCESS_TOKEN_EXPIRE_MINUTES"))
         self.refresh_token_expire_days = int(EnvTools.load_env_var("REFRESH_TOKEN_EXPIRE_DAYS"))
         self.algorithm = "RS256"

@@ -17,8 +17,7 @@ from bs_schemas import AccessPayload, RefreshPayload
 class JwtParser:
     def __init__(self):
         self.config = ConfigLoader()
-        self.private_key = self._read_key("private_key")
-        self.public_key = self._read_key("public_key")
+        self.public_key = EnvTools.load_env_var("public_key")
         self.access_token_expire_minutes = int(EnvTools.load_env_var("ACCESS_TOKEN_EXPIRE_MINUTES"))
         self.refresh_token_expire_days = int(EnvTools.load_env_var("REFRESH_TOKEN_EXPIRE_DAYS"))
         self.algorithm = "RS256"
@@ -47,33 +46,4 @@ class JwtParser:
         except JWTError as ex:
             logger.error(f"JWT validation error: {ex}")
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
-        
-
-    def generate_refresh_token(self, user_id: str, session_id: str):
-        expires_at = int((
-            datetime.now(timezone.utc)
-            + timedelta(days=self.refresh_token_expire_days)
-        ).timestamp())
-
-        jwt_payload = RefreshPayload(
-            sub=user_id,
-            sid=session_id,
-            exp=expires_at,
-            ref=True,
-        )
-
-        return jwt.encode(jwt_payload.model_dump(), self.private_key, algorithm=self.algorithm)
-        
-    
-    def generate_access_token(self, user_id: str, session_id: str):
-        expires_at = int((datetime.now(timezone.utc) + timedelta(minutes=self.access_token_expire_minutes)).timestamp())
-        jwt_payload = AccessPayload(
-            sub=user_id,
-            sid=session_id,
-            exp=expires_at,
-        )
-
-        return jwt.encode(jwt_payload.model_dump(), self.private_key, algorithm=self.algorithm)
-        
- 
 

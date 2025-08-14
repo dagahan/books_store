@@ -14,7 +14,7 @@ dependencies = [
     "chardet==5.2.0",
     "bcrypt==3.2.0",
     "dotenv==0.9.9",
-    "bs_models @ git+https://github.com/dagahan/bs_models.git" 
+    "bs_models @ git+https://github.com/dagahan/bs_models.git",
 ]
 
 

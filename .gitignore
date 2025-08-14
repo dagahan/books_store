@@ -209,6 +209,10 @@ cython_debug/
 **/*.pem
 
 
+# db_migrations
+**/migrations/versions
+
+
 # IDE files
 .vscode/
 .idea/
