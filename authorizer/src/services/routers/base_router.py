@@ -1,5 +1,6 @@
-from typing import Any, Iterable, List, Optional, Union, Dict
+from typing import Any, Iterable, List, Optional, Union, Dict, Tuple
 from uuid import UUID as PythonUUID
+import uuid
 
 from loguru import logger
 import colorama
@@ -14,6 +15,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 from src.services.db.database import DataBase
 from src.services.jwt.jwt_parser import JwtParser
+from src.services.auth.auth_service import AuthService
 from bs_schemas import *
 from bs_models import *
 from src.services.auth.sessions_manager import *
@@ -24,6 +26,7 @@ from src.services.jwt import *
 class BaseRouter:
     def __init__(self, db: DataBase):
         self.db = db
+        self.jwt_parser = JwtParser()
 
 
     async def find_user_by_any_credential(self, session: AsyncSession, user_data: Any) -> User:
@@ -91,4 +94,25 @@ class BaseRouter:
             status_code=400,
             detail=f"{entity_name} with this {getattr(attribute, 'key', str(attribute))} already exists"
         )
+
+
+    async def get_payload_or_401(self, credentials: HTTPAuthorizationCredentials) -> Dict[str, Any]:
+        if credentials is None or not credentials.credentials:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authorization header missing.")
+        return self.jwt_parser.decode_token(credentials.credentials)
+
+
+    async def require_admin(self, credentials: HTTPAuthorizationCredentials) -> Tuple[uuid.UUID, Optional[str]]:
+        payload: Dict[str, Any] = await self.get_payload_or_401(credentials)
+        sub: Optional[str] = payload.get("sub")
+        sid: Optional[str] = payload.get("sid")
+        if not sub:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Access token missing subject (sub).")
+
+        try:
+            return uuid.UUID(sub), sid
+        except Exception:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid admin UUID in token.")
+
+
 

@@ -125,7 +125,7 @@ class AuthService:
 
 
     async def set_is_active_user(self, user_id: uuid.UUID, admin_id: uuid.UUID, option: bool):
-        async with self.db.get_session() as session:
+        async with self.db.session_ctx() as session:
             try:
                 result = await session.execute(
                                 select(User)
@@ -158,9 +158,7 @@ class AuthService:
                         detail="User not found"
                     )
 
-                if not option:
-                    self.sessions_manager.delete_session(user.id)
-                setattr(user, User.is_active, option)
+                user.is_active = option
                     
                 await session.commit()
                 
