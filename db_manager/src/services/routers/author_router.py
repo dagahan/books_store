@@ -19,7 +19,7 @@ def get_author_router(db: DataBase) -> APIRouter:
         if not row_items:
             raise HTTPException(status_code=404, detail="There are no authors")
 
-        return base_router.validate_models_by_schema(row_items, AuthorDTO)
+        return ValidatingTools.validate_models_by_schema(row_items, AuthorDTO)
 
 
     @router.get("/{author_id}", status_code=status.HTTP_200_OK)
@@ -38,7 +38,7 @@ def get_author_router(db: DataBase) -> APIRouter:
             logger.warning(f"Author with ID {author_id} not found.")
             raise HTTPException(status_code=404, detail="Author not found")
         
-        return base_router.validate_models_by_schema(author, AuthorDTO)
+        return ValidatingTools.validate_models_by_schema(author, AuthorDTO)
 
 
     @router.post("/", status_code=status.HTTP_201_CREATED)

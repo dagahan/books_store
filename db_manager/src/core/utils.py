@@ -4,20 +4,23 @@ import os.path
 import shutil
 from inspect import getframeinfo, stack
 from pathlib import Path
-from typing import Any, List, Tuple
+from typing import Any, List, Tuple, Iterable
 
 import chardet
 from loguru import logger
+import bcrypt
+
+from datetime import datetime
+import colorama
+from zoneinfo import ZoneInfo
 
 from dotenv import load_dotenv, find_dotenv
 from pathlib import Path
 
+from pydantic import ValidationError
+
 
 class MethodTools:
-    def __init__(self) -> None:
-        pass
-
-
     @staticmethod
     def get_method_info(stack_level: int = 1) -> Tuple[str, str, int]:
         try:
@@ -44,9 +47,6 @@ class MethodTools:
 
 
 class FileSystemTools:
-    def __init__(self) -> None:
-        pass
-
     @staticmethod
     def ensure_directory_exists(directory: str) -> None:
         path = Path(directory)
@@ -187,3 +187,50 @@ class Filters:
     @staticmethod
     def personalized_line(line: str, artifact: str, name: str) -> str:
         return line.replace(artifact, name)
+
+
+class StringTools:
+    @staticmethod
+    def hash_string(string: str) -> str:
+        salt = bcrypt.gensalt()
+        return bcrypt.hashpw(string.encode('utf-8'), salt).decode('utf-8')
+
+
+class TimeTools:
+    def now_time_zone() -> datetime:
+        tz_name = EnvTools.load_env_var("TZ") or "UTC"
+        try:
+            tz = ZoneInfo(tz_name)
+
+        except Exception:
+            tz = ZoneInfo("UTC")
+
+        return datetime.now(tz)
+
+
+    @staticmethod
+    def now_time_stamp() -> int:
+        return int(TimeTools.now_time_zone().timestamp())
+
+
+
+class ValidatingTools:
+    @staticmethod
+    def validate_models_by_schema(models: Any, schema: Any) -> Any:
+        if not isinstance(models, Iterable):
+            models = [models]
+
+        valid_models = []
+        for model in models:
+            try:
+                dto = schema.model_validate(model, from_attributes=True)
+                valid_models.append(dto)
+                
+            except ValidationError as ex:
+                model_id = getattr(model, "id", None)
+                logger.warning(f"{colorama.Fore.YELLOW}Skipping invalid instance of {schema.__name__} (id={model_id}): {ex.errors()}")
+
+        if len(valid_models) == 1:
+            return valid_models[0]
+        return valid_models
+

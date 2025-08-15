@@ -37,6 +37,9 @@ def get_gateway_router(db: DataBase) -> APIRouter:
             if not sessions_manager.is_session_exists(sid):
                 raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Session expired")
 
+            # extend the session lifetime by 30 days from now, without exceeding the mtl.
+            sessions_manager.touch_session(session_id=sid)
+
         service_address = base_router.map_path_to_service_address(endpoint_path)
         if not service_address:
             raise HTTPException(status_code=404, detail="No upstream service mapped for this path")

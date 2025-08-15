@@ -31,7 +31,16 @@ def get_token_router(db: DataBase) -> APIRouter:
     ) -> ResponseRefresh:
         try: 
             payload = jwt_parser.validate_token(data.refresh_token)
-            sessions_manager.create_session(payload.get("sub"))
+
+            test_dsh = sessions_manager.get_test_dsh()
+            sessions_manager.create_session(
+                payload.get("sub"),
+                user_agent=test_dsh.get("user_agent"),
+                client_id=test_dsh.get("client_id"),
+                local_system_time_zone=test_dsh.get("local_system_time_zone"),
+                platform=test_dsh.get("platform"),
+                ip=StringTools.hash_string(sessions_manager.get_test_client_ip()),
+            )
             logger.debug(f"New access token generated with refresh token for user: {payload.get("sub")}")
 
         except Exception as ex:

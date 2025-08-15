@@ -4,17 +4,23 @@ import os.path
 import shutil
 from inspect import getframeinfo, stack
 from pathlib import Path
-from typing import Any, List, Tuple
+from typing import Any, List, Tuple, Iterable
 
 import chardet
+import colorama
 from loguru import logger
+import bcrypt
+
+from datetime import datetime
+from zoneinfo import ZoneInfo
+
+from dotenv import load_dotenv, find_dotenv
+from pathlib import Path
+
+from pydantic import ValidationError
 
 
 class MethodTools:
-    def __init__(self) -> None:
-        pass
-
-
     @staticmethod
     def get_method_info(stack_level: int = 1) -> Tuple[str, str, int]:
         try:
@@ -41,9 +47,6 @@ class MethodTools:
 
 
 class FileSystemTools:
-    def __init__(self) -> None:
-        pass
-
     @staticmethod
     def ensure_directory_exists(directory: str) -> None:
         path = Path(directory)
@@ -78,7 +81,12 @@ class EnvTools:
     @staticmethod
     def load_env_var(variable_name: str) -> Any:
         try:
-            env_var = os.environ[variable_name]
+            dotenv_path = find_dotenv(usecwd=True)
+            if dotenv_path:
+                load_dotenv(dotenv_path=dotenv_path)
+            else:
+                load_dotenv()
+            env_var = os.getenv(variable_name)
             if not env_var:
                 logger.critical(f"Cannot load env var named '{variable_name}'. returning None.")
 
@@ -111,8 +119,11 @@ class EnvTools:
 
     @staticmethod
     def get_service_ip(service_name: str) -> str:
-        if EnvTools.is_running_inside_docker_compose():
-            return f"{service_name}-{EnvTools.load_env_var('COMPOSE_PROJECT_NAME')}"
+        try:
+            if EnvTools.is_running_inside_docker_compose():
+                return f"{service_name}-{EnvTools.load_env_var('COMPOSE_PROJECT_NAME')}"
+        except Exception as ex:
+            pass
         return EnvTools.load_env_var(f"{service_name.upper()}_HOST")
     
 
@@ -176,3 +187,49 @@ class Filters:
     @staticmethod
     def personalized_line(line: str, artifact: str, name: str) -> str:
         return line.replace(artifact, name)
+
+
+class StringTools:
+    @staticmethod
+    def hash_string(string: str) -> str:
+        salt = bcrypt.gensalt()
+        return bcrypt.hashpw(string.encode('utf-8'), salt).decode('utf-8')
+
+
+class TimeTools:
+    def now_time_zone() -> datetime:
+        tz_name = EnvTools.load_env_var("TZ") or "UTC"
+        try:
+            tz = ZoneInfo(tz_name)
+
+        except Exception:
+            tz = ZoneInfo("UTC")
+
+        return datetime.now(tz)
+
+
+    @staticmethod
+    def now_time_stamp() -> int:
+        return int(TimeTools.now_time_zone().timestamp())
+
+
+class ValidatingTools:
+    @staticmethod
+    def validate_models_by_schema(models: Any, schema: Any) -> Any:
+        if not isinstance(models, Iterable):
+            models = [models]
+
+        valid_models = []
+        for model in models:
+            try:
+                dto = schema.model_validate(model, from_attributes=True)
+                valid_models.append(dto)
+                
+            except ValidationError as ex:
+                model_id = getattr(model, "id", None)
+                logger.warning(f"{colorama.Fore.YELLOW}Skipping invalid instance of {schema.__name__} (id={model_id}): {ex.errors()}")
+
+        if len(valid_models) == 1:
+            return valid_models[0]
+        return valid_models
+

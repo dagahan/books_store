@@ -41,7 +41,16 @@ def get_user_router(db: DataBase) -> APIRouter:
 
             user_id = str(user.id) # converting to string because JSON can't serialize UUID :/
 
-            session_id = sessions_manager.create_session(user_id)
+            test_dsh = sessions_manager.get_test_dsh()
+            session_id = sessions_manager.create_session(
+                user_id,
+                user_agent=test_dsh.get("user_agent"),
+                client_id=test_dsh.get("client_id"),
+                local_system_time_zone=test_dsh.get("local_system_time_zone"),
+                platform=test_dsh.get("platform"),
+                ip=StringTools.hash_string(sessions_manager.get_test_client_ip()),
+            ).get("session_id")
+
             access_token = jwt_parser.generate_access_token(user_id, session_id)
             refresh_token = jwt_parser.generate_refresh_token(user_id, session_id)
 
@@ -74,7 +83,17 @@ def get_user_router(db: DataBase) -> APIRouter:
                 raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User is inactive")
 
             user_id = str(user.id)
-            session_id = sessions_manager.create_session(user_id)
+            
+            test_dsh = sessions_manager.get_test_dsh()
+            session_id = sessions_manager.create_session(
+                user_id,
+                user_agent=test_dsh.get("user_agent"),
+                client_id=test_dsh.get("client_id"),
+                local_system_time_zone=test_dsh.get("local_system_time_zone"),
+                platform=test_dsh.get("platform"),
+                ip=StringTools.hash_string(sessions_manager.get_test_client_ip()),
+            ).get("session_id")
+
             access_token = jwt_parser.generate_access_token(user_id, session_id)
             refresh_token = jwt_parser.generate_refresh_token(user_id, session_id)
 
@@ -117,6 +136,9 @@ def get_user_router(db: DataBase) -> APIRouter:
 
             try:
                 deleted = sessions_manager.delete_session(sid)
+                if sessions_manager.is_session_exists(sid):
+                    raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Cannot delete session.")
+
             except Exception as ex:
                 logger.exception(f"Error while deleting session {sid} {ex}")
                 raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal server error")
@@ -134,6 +156,5 @@ def get_user_router(db: DataBase) -> APIRouter:
     
 
     return router
-
 
 

@@ -35,7 +35,3 @@ line-length = 88
 extend-select = ["W", "N", "R", "I"]
 # Letters means included rules classes from PEP8
 ignore = ["W293", "F403", "F405"]
-
-
-[jwt]
-public_key = "certs/jwt-public.pem"

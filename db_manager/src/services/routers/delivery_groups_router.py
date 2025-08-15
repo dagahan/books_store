@@ -19,7 +19,7 @@ def get_delivery_group_router(db: DataBase) -> APIRouter:
         if not delivery_groups:
             raise HTTPException(status_code=404, detail="There are no delivery_groups")
         
-        return base_router.validate_models_by_schema(delivery_groups, DeliveryGroupDTO)
+        return ValidatingTools.validate_models_by_schema(delivery_groups, DeliveryGroupDTO)
 
 
     @router.get("/{delivery_group_id}", status_code=status.HTTP_200_OK)
@@ -37,7 +37,7 @@ def get_delivery_group_router(db: DataBase) -> APIRouter:
         if not delivery_group:
             raise HTTPException(status_code=404, detail="delivery_group not found")
         
-        return base_router.validate_models_by_schema(delivery_group, DeliveryGroupDTO)
+        return ValidatingTools.validate_models_by_schema(delivery_group, DeliveryGroupDTO)
 
 
     @router.post("/", status_code=status.HTTP_201_CREATED)

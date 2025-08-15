@@ -24,7 +24,7 @@ def get_user_router(db: DataBase) -> APIRouter:
         if not users:
             raise HTTPException(status_code=404, detail="There are no users")
         
-        return base_router.validate_models_by_schema(users, UserDTO)
+        return ValidatingTools.validate_models_by_schema(users, UserDTO)
 
 
     @router.get("/{user_id}", status_code=status.HTTP_200_OK)
@@ -47,7 +47,7 @@ def get_user_router(db: DataBase) -> APIRouter:
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
         
-        return base_router.validate_models_by_schema(user, UserDTO)
+        return ValidatingTools.validate_models_by_schema(user, UserDTO)
 
 
     @router.post("/", status_code=status.HTTP_201_CREATED)

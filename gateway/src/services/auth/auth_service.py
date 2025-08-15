@@ -71,8 +71,8 @@ class AuthService:
                     detail="Session expired"
                 )
 
-            session_data = self.sessions_manager.get_session_data(session_id)
-            session_user_id = session_data.get("user_id")
+            session = self.sessions_manager.get_session(session_id)
+            session_user_id = session.user_id
             if session_user_id and str(session_user_id) != str(user_id):
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
@@ -87,11 +87,6 @@ class AuthService:
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid access token"
             )
-
-
-    async def logout(self, session_id: str):
-        self.sessions_manager.delete_session(session_id)
-        return {"message": "Session terminated"}
 
 
     async def get_access_token_by_refresh_token(self, refresh_token: str) -> str:
@@ -118,8 +113,6 @@ class AuthService:
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail="Session expired"
                 )
-                
-            self.sessions_manager.create_session(session_id)
             
             return self.jwt_parser.generate_access_token(
                 user_id=user_id, 
@@ -194,4 +187,5 @@ class AuthService:
         just synonim to set set_is_active_user(True).
         '''
         await self.set_is_active_user(user_id, admin_id, True)
+
 

@@ -2,13 +2,13 @@ from typing import Any, Iterable, List, Optional, Union, Dict
 from uuid import UUID as PythonUUID
 
 from loguru import logger
-from pydantic import ValidationError
 import colorama
 
 from fastapi import APIRouter, HTTPException, Response, status, Depends
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from src.core.utils import ValidatingTools
 from src.core.config import ConfigLoader
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
@@ -52,6 +52,11 @@ class BaseRouter:
         if not user:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
 
+        dto = ValidatingTools.validate_models_by_schema(user, UserDTO)
+        if dto is None:
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                                detail="User record failed schema validation")
+
         return user
 
 
@@ -86,22 +91,4 @@ class BaseRouter:
             status_code=400,
             detail=f"{entity_name} with this {getattr(attribute, 'key', str(attribute))} already exists"
         )
-    
 
-    def validate_models_by_schema(self, models: Any, schema: Any) -> Any:
-        if not isinstance(models, Iterable):
-            models = [models]
-
-        valid_models = []
-        for model in models:
-            try:
-                dto = schema.model_validate(model, from_attributes=True)
-                valid_models.append(dto)
-                
-            except ValidationError as ex:
-                model_id = getattr(model, "id", None)
-                logger.warning(f"{colorama.Fore.YELLOW}Skipping invalid instance of {schema.__name__} (id={model_id}): {ex.errors()}")
-
-        if len(valid_models) == 1:
-            return valid_models[0]
-        return valid_models

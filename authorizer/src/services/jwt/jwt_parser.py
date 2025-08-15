@@ -13,11 +13,14 @@ from pydantic import BaseModel
 from valkey import Valkey
 from bs_schemas import AccessPayload, RefreshPayload
 from jose.exceptions import ExpiredSignatureError
+from src.core.utils import StringTools
+from src.services.auth.sessions_manager import SessionsManager
 
 
 class JwtParser:
     def __init__(self):
         self.config = ConfigLoader()
+        self.sessions_manager = SessionsManager()
         self.private_key = self._read_key("private_key")
         self.public_key = EnvTools.load_env_var("public_key")
         self.access_token_expire_minutes = int(EnvTools.load_env_var("ACCESS_TOKEN_EXPIRE_MINUTES"))
@@ -70,7 +73,7 @@ class JwtParser:
         except Exception as ex:
             logger.exception(f"Unexpected error while decoding token: {ex}")
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
-        
+
 
     def generate_refresh_token(self, user_id: str, session_id: str):
         expires_at = int((
@@ -78,11 +81,17 @@ class JwtParser:
             + timedelta(days=self.refresh_token_expire_days)
         ).timestamp())
 
+        test_dsh: dict = self.sessions_manager.get_test_dsh()
+        dsh: str = StringTools.hash_string(
+            f"{test_dsh.get("user_agent")}{test_dsh.get("client_id")}{test_dsh.get("local_system_time_zone")}{test_dsh.get("platform")}"
+        )
+
         jwt_payload = RefreshPayload(
             sub=user_id,
             sid=session_id,
             exp=expires_at,
-            ref=True,
+            dsh=dsh,
+            ish=StringTools.hash_string(self.sessions_manager.get_test_client_ip()),
         )
 
         return jwt.encode(jwt_payload.model_dump(), self.private_key, algorithm=self.algorithm)
