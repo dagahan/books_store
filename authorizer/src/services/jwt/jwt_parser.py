@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, Union
+from typing import Any, Dict, Union, Optional
 
 from bs_schemas import AccessPayload, RefreshPayload
 from fastapi import HTTPException, status
@@ -8,7 +8,7 @@ from jose.exceptions import ExpiredSignatureError
 from loguru import logger
 
 from src.core.config import ConfigLoader
-from src.core.utils import EnvTools, StringTools
+from src.core.utils import EnvTools, StringTools, TimeTools
 from src.services.auth.sessions_manager import SessionsManager
 
 
@@ -90,15 +90,43 @@ class JwtParser:
         )
 
         return jwt.encode(jwt_payload.model_dump(), self.private_key, algorithm=self.algorithm)
+
+
+    def make_refresh_token_invalid(self, refresh_token: str) -> None:
+        """
+        Marks refresh as used (one-time).
+        Creates the Invalid_refresh key:{hash_session_id}:{refresh_hash} from TTL to exp.
+        """
+        try:
+            claims: Dict[str, Any] = jwt.get_unverified_claims(refresh_token)  # type: ignore[attr-defined]
+            exp_time_stamp = int(claims.get("exp")) if claims and "exp" in claims else None
+        except Exception:
+            exp_time_stamp = None
+
+        ttl: int = max(1, (exp_time_stamp - TimeTools.now_time_stamp())) if exp_time_stamp is not None else 1
+
+        key: str = f"Invalid_refresh:{refresh_token}"
+        self.sessions_manager.valkey_service.set(key, "1", ex=ttl)
+
+
+    def is_refresh_token_in_invalid_list(self, refresh_token: str) -> bool:
+        key: str = f"Invalid_refresh:{refresh_token}"
+        return self.sessions_manager.valkey_service.exists(key) == 1
         
     
-    def generate_access_token(self, user_id: str, session_id: str):
+    def generate_access_token(self, user_id: str, session_id: str, refresh_token: str, make_refresh_token_used: bool):
+        if refresh_token is not None and self.is_refresh_token_in_invalid_list(refresh_token):
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh token already used")
+
         expires_at = int((datetime.now(timezone.utc) + timedelta(minutes=self.access_token_expire_minutes)).timestamp())
         jwt_payload = AccessPayload(
             sub=user_id,
             sid=session_id,
             exp=expires_at,
         )
+
+        if make_refresh_token_used:
+            self.make_refresh_token_invalid(refresh_token)
 
         return jwt.encode(jwt_payload.model_dump(), self.private_key, algorithm=self.algorithm)
         

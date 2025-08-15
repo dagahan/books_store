@@ -67,7 +67,7 @@ class AuthService:
                 )
 
             session = self.sessions_manager.get_session(session_id)
-            session_user_id = session.user_id
+            session_user_id = session.sub
             if session_user_id and str(session_user_id) != str(user_id):
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
@@ -111,7 +111,9 @@ class AuthService:
             
             return self.jwt_parser.generate_access_token(
                 user_id=user_id,
-                session_id=session_id
+                session_id=session_id,
+                refresh_token=refresh_token,
+                make_refresh_token_used=True,
             )
             
         except JWTError as ex:

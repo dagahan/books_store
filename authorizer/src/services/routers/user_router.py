@@ -51,8 +51,14 @@ def get_user_router(db: DataBase) -> APIRouter:
                 ip=StringTools.hash_string(sessions_manager.get_test_client_ip()),
             ).get("session_id")
 
-            access_token = jwt_parser.generate_access_token(user_id, session_id)
             refresh_token = jwt_parser.generate_refresh_token(user_id, session_id)
+
+            access_token = jwt_parser.generate_access_token(
+                user_id=user_id,
+                session_id=session_id,
+                refresh_token=refresh_token,
+                make_refresh_token_used=False,
+            )
 
             await session.commit()
 
@@ -94,8 +100,14 @@ def get_user_router(db: DataBase) -> APIRouter:
                 ip=StringTools.hash_string(sessions_manager.get_test_client_ip()),
             ).get("session_id")
 
-            access_token = jwt_parser.generate_access_token(user_id, session_id)
             refresh_token = jwt_parser.generate_refresh_token(user_id, session_id)
+
+            access_token = jwt_parser.generate_access_token(
+                user_id=user_id,
+                session_id=session_id,
+                refresh_token=refresh_token,
+                make_refresh_token_used=False,
+            )
 
         except HTTPException:
             raise
