@@ -68,6 +68,8 @@ def get_user_router(db: DataBase) -> APIRouter:
             middle_name=user_data.middle_name.capitalize(),
             email=user_data.email,
             phone=user_data.phone,
+            role=data.role,
+            is_seller=data.is_seller,
         )
         session.add(user)
         await session.commit()

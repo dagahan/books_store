@@ -102,12 +102,34 @@ class BaseRouter:
         return self.jwt_parser.decode_token(credentials.credentials)
 
 
-    async def require_admin(self, credentials: HTTPAuthorizationCredentials) -> Tuple[uuid.UUID, Optional[str]]:
+    async def require_admin(self,
+        credentials: HTTPAuthorizationCredentials,
+        session: AsyncSession,
+    ) -> Tuple[uuid.UUID, Optional[str]]:
         payload: Dict[str, Any] = await self.get_payload_or_401(credentials)
         sub: Optional[str] = payload.get("sub")
         sid: Optional[str] = payload.get("sid")
         if not sub:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Access token missing subject (sub).")
+
+        async with self.db.session_ctx() as session:
+            result = await session.execute(
+                            select(User)
+                            .where(User.id == sub)
+                            .options(noload("*"))
+                        )
+            admin_id: User = result.scalar_one_or_none()
+            if not admin_id:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Admin not found"
+                )
+
+            if admin_id.role == UserRole.user or admin_id.role == UserRole.moderator:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Admin privileges required"
+                )
 
         try:
             return uuid.UUID(sub), sid

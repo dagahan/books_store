@@ -124,27 +124,9 @@ class AuthService:
             )
 
 
-    async def set_is_active_user(self, user_id: uuid.UUID, admin_id: uuid.UUID, option: bool):
+    async def set_is_active_user(self, user_id: str, option: bool):
         async with self.db.session_ctx() as session:
-            try:
-                result = await session.execute(
-                                select(User)
-                                .where(User.id == admin_id)
-                                .options(noload("*"))
-                            )
-                admin_id = result.scalar_one_or_none()
-                if not admin_id:
-                    raise HTTPException(
-                        status_code=status.HTTP_404_NOT_FOUND,
-                        detail="Admin not found"
-                    )
-
-                if admin_id.role != UserRole.admin:
-                    raise HTTPException(
-                        status_code=status.HTTP_403_FORBIDDEN,
-                        detail="Admin privileges required"
-                    )
-                    
+            try:                  
                 result = await session.execute(
                                 select(User)
                                 .where(User.id == user_id)
@@ -161,8 +143,6 @@ class AuthService:
                 user.is_active = option
                     
                 await session.commit()
-                
-                return {"message": f"User with UUID: {user_id} banned"}
             
             except Exception as ex:
                 logger.error(f"Couldn't ban user during the exception: {ex}")
@@ -170,17 +150,17 @@ class AuthService:
         
 
 
-    async def ban_user(self, user_id: uuid.UUID, admin_id: uuid.UUID):
+    async def ban_user(self, user_id: str):
         '''
         just synonim to set set_is_active_user(False).
         '''
-        await self.set_is_active_user(user_id, admin_id, False)
+        await self.set_is_active_user(user_id, False)
 
 
-    async def unban_user(self, user_id: uuid.UUID, admin_id: uuid.UUID):
+    async def unban_user(self, user_id: str):
         '''
         just synonim to set set_is_active_user(True).
         '''
-        await self.set_is_active_user(user_id, admin_id, True)
+        await self.set_is_active_user(user_id, True)
 
 

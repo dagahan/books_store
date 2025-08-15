@@ -35,6 +35,7 @@ def get_user_router(db: DataBase) -> APIRouter:
                 email=data.email,
                 phone=data.phone,
                 role=data.role,
+                is_seller=data.is_seller,
             )
 
             session.add(user)
@@ -174,14 +175,14 @@ def get_user_router(db: DataBase) -> APIRouter:
         The user's ban. Requires valid access from the administrator.
         """
         try:
-            admin_id, _ = await base_router.require_admin(credentials)
+            admin_id, _ = await base_router.require_admin(credentials, session)
 
             try:
                 ban_user_id: uuid.UUID = data.ban_user_id if isinstance(data.ban_user_id, uuid.UUID) else uuid.UUID(str(data.ban_user_id))
             except Exception:
                 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid ban_user_id.")
 
-            await auth_service.ban_user(user_id=ban_user_id, admin_id=admin_id)
+            await auth_service.ban_user(user_id=ban_user_id)
             sessions_manager.delete_all_sessions_for_user(ban_user_id)
             return BanResponse(
                 succsess=True
@@ -204,14 +205,14 @@ def get_user_router(db: DataBase) -> APIRouter:
         The user's unban. Requires valid access from the administrator.
         """
         try:
-            admin_id, _ = await base_router.require_admin(credentials)
+            admin_id, _ = await base_router.require_admin(credentials, session)
 
             try:
                 unban_user_id: uuid.UUID = data.unban_user_id if isinstance(data.unban_user_id, uuid.UUID) else uuid.UUID(str(data.unban_user_id))
             except Exception:
                 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid ban_user_id.")
 
-            await auth_service.unban_user(user_id=unban_user_id, admin_id=admin_id)
+            await auth_service.unban_user(user_id=unban_user_id)
             return UnbanResponse(
                 succsess=True
             )

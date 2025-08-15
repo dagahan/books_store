@@ -131,6 +131,7 @@ async def seed_data() -> None:
                     phone=phone,
                     role=UserRole.user,  # по умолчанию обычный пользователь
                     is_active=True,
+                    is_seller=False,
                 )
                 users.append(user)
 
