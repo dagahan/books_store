@@ -11,3 +11,10 @@ web front-end with react with simple site.
 warehouses:
 real address (text). add functions: get coordinates of text address, get distance between 2 coordinates points (trough line and though road (yandex map api))
 manager 
+
+
+
+Sessions:
+1. IP addresses
+2. Using OS
+3. Device Name

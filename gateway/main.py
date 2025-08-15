@@ -16,8 +16,8 @@ class Service:
         self.logger_setup = LogSetup()
         self.server = Server()
         self.service_name = self.config.get("project", "name")
-
-
+    
+    
     def run_service(self):
         self.logger_setup.configure()
         asyncio.run(self.server.run_server())

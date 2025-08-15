@@ -1,14 +1,11 @@
-import asyncio
 import uvicorn
 from fastapi import FastAPI
 from loguru import logger
 
-from redis import Redis
-from valkey import Valkey
-
 from src.core.config import ConfigLoader
 from src.core.utils import EnvTools
-from src.services.routers import *
+from src.services.db.database import DataBase
+from src.services.routers.token_router import *
 from src.services.routers.user_router import *
 
 
@@ -49,4 +46,5 @@ class Server:
             return {"message": f"Hello! This is {self.config.get("project", "name")} service!"}
 
         self.app.include_router(get_user_router(self.data_base))
+        self.app.include_router(get_token_router(self.data_base))
             

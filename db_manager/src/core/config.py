@@ -1,3 +1,4 @@
+import sys
 import tomllib
 from pathlib import Path
 from typing import Any
@@ -23,20 +24,17 @@ class ConfigLoader:
     @classmethod
     def _load(cls) -> None:
         try:
-            start_dir = Path(__file__).resolve().parent
-            pyproject_path = None
-            for parent in [start_dir, *start_dir.parents]:
-                candidate = parent / "pyproject.toml"
-                if candidate.exists():
-                    pyproject_path = candidate
-                    break
+            if hasattr(sys, 'ps1') or 'ipykernel' in sys.modules:
+                cls.project_root = Path().resolve()
+            else:
+                cls.project_root = Path(__file__).resolve().parents[2]
 
-            if pyproject_path is None:
-                raise FileNotFoundError("pyproject.toml not found from gateway/src/core/config.py upwards")
+            cls.pyproject_path = cls.project_root / "pyproject.toml"
 
-            with open(pyproject_path, "rb") as f:
+            with open(cls.pyproject_path, "rb") as f:
                 cls.__config = tomllib.load(f)
             EnvTools.set_env_var("CONFIG_LOADED", "1")
+            
         except Exception as error:
             logger.critical("Config load failed: {error}", error=error)
             raise

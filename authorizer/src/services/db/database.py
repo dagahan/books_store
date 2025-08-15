@@ -1,5 +1,8 @@
 import colorama
+from bs_models import Base
 from loguru import logger
+from typing import AsyncIterator
+from contextlib import asynccontextmanager
 from sqlalchemy import (
     text,
 )
@@ -11,7 +14,6 @@ from sqlalchemy.ext.asyncio import (
 
 from src.core.config import ConfigLoader
 from src.core.utils import EnvTools
-from src.services.db.models.base_model import Base
 
 
 class DataBase:
@@ -52,7 +54,13 @@ class DataBase:
             raise Exception(f"{colorama.Fore.RED}Cannot establish connection with data base.")
 
 
-    async def get_session(self) -> AsyncSession:
+    async def get_session(self) -> AsyncIterator[AsyncSession]:
+        async with self.async_session() as session:
+            yield session
+
+
+    @asynccontextmanager
+    async def session_ctx(self) -> AsyncIterator[AsyncSession]:
         async with self.async_session() as session:
             yield session
 

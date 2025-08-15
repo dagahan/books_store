@@ -5,7 +5,8 @@ from pathlib import Path
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 
-import sys, os
+import sys
+import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/../..")
 
 project_root = Path(__file__).resolve().parents[4]
@@ -19,7 +20,7 @@ except Exception:
     raise RuntimeError(f".env not found at {dotenv_path}")
 
 from src.services.db.database import Base, DataBase
-from src.services.db.models import *
+from bs_models import *
 
 config = context.config
 

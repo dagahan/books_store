@@ -8,12 +8,13 @@ dependencies = [
     "SQLAlchemy==2.0.41",
     "psycopg[binary]==3.2.9",
     "asyncpg==0.30.0",
-    "alembic==1.12.0",
+    "alembic==1.16.4",
     "fastapi==0.116.0",
     "pydantic==2.11.7",
     "chardet==5.2.0",
     "bcrypt==3.2.0",
     "dotenv==0.9.9",
+    "bs_models @ git+https://github.com/dagahan/bs_models.git",
 ]
 
 

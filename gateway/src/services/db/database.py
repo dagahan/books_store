@@ -1,5 +1,8 @@
 import colorama
+from bs_models import Base
 from loguru import logger
+from typing import AsyncIterator
+from contextlib import asynccontextmanager
 from sqlalchemy import (
     text,
 )
@@ -11,15 +14,14 @@ from sqlalchemy.ext.asyncio import (
 
 from src.core.config import ConfigLoader
 from src.core.utils import EnvTools
-from src.services.db.models.base_model import Base
 
 
 class DataBase:
     def __init__(self,) -> None:
         self.config = ConfigLoader()
         self.engine = None
-        self.db_host = EnvTools.load_env_var("POSTGRES_HOST")
-        self.db_port = EnvTools.load_env_var("POSTGRES_PORT")
+        self.db_host = EnvTools.get_service_ip("postgres")
+        self.db_port = EnvTools.get_service_port("postgres")
         self.db_user = EnvTools.load_env_var("POSTGRES_USER")
         self.db_pwd = EnvTools.load_env_var("POSTGRES_PASSWORD")
         self.db_name = EnvTools.load_env_var("POSTGRES_DB")
@@ -52,7 +54,13 @@ class DataBase:
             raise Exception(f"{colorama.Fore.RED}Cannot establish connection with data base.")
 
 
-    async def get_session(self) -> AsyncSession:
+    async def get_session(self) -> AsyncIterator[AsyncSession]:
+        async with self.async_session() as session:
+            yield session
+
+
+    @asynccontextmanager
+    async def session_ctx(self) -> AsyncIterator[AsyncSession]:
         async with self.async_session() as session:
             yield session
 

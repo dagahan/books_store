@@ -22,7 +22,7 @@ class AuthService:
 
 
     async def authenticate_user(self, identifier: str, password: str) -> User:
-        async with self.db.session_ctx() as session:
+        async with self.db.get_session() as session:
             result = await session.execute(
                 select(User)
                 .where(
@@ -88,7 +88,7 @@ class AuthService:
         try:
             payload = self.jwt_parser.validate_token(refresh_token)
             
-            if not payload.get("dsh"):
+            if not payload.get("ref"):
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
                     detail="Invalid token type"
@@ -106,7 +106,7 @@ class AuthService:
             if not self.sessions_manager.is_session_exists(session_id):
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Session isn't exist."
+                    detail="Session expired"
                 )
             
             return self.jwt_parser.generate_access_token(
@@ -116,17 +116,35 @@ class AuthService:
                 make_refresh_token_used=True,
             )
             
-        except JWTError as ex:
-            logger.error(f"Refresh token error: {ex}")
+        except JWTError as e:
+            logger.error(f"Refresh token error: {e}")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid refresh token"
             )
 
 
-    async def set_is_active_user(self, user_id: str, option: bool):
+    async def set_is_active_user(self, user_id: uuid.UUID, admin_id: uuid.UUID, option: bool):
         async with self.db.session_ctx() as session:
-            try:                  
+            try:
+                result = await session.execute(
+                                select(User)
+                                .where(User.id == admin_id)
+                                .options(noload("*"))
+                            )
+                admin_id = result.scalar_one_or_none()
+                if not admin_id:
+                    raise HTTPException(
+                        status_code=status.HTTP_404_NOT_FOUND,
+                        detail="Admin not found"
+                    )
+
+                if admin_id.role != UserRole.admin:
+                    raise HTTPException(
+                        status_code=status.HTTP_403_FORBIDDEN,
+                        detail="Admin privileges required"
+                    )
+                    
                 result = await session.execute(
                                 select(User)
                                 .where(User.id == user_id)
@@ -143,6 +161,8 @@ class AuthService:
                 user.is_active = option
                     
                 await session.commit()
+                
+                return {"message": f"User with UUID: {user_id} banned"}
             
             except Exception as ex:
                 logger.error(f"Couldn't ban user during the exception: {ex}")
@@ -150,17 +170,17 @@ class AuthService:
         
 
 
-    async def ban_user(self, user_id: str):
+    async def ban_user(self, user_id: uuid.UUID, admin_id: uuid.UUID):
         '''
         just synonim to set set_is_active_user(False).
         '''
-        await self.set_is_active_user(user_id, False)
+        await self.set_is_active_user(user_id, admin_id, False)
 
 
-    async def unban_user(self, user_id: str):
+    async def unban_user(self, user_id: uuid.UUID, admin_id: uuid.UUID):
         '''
         just synonim to set set_is_active_user(True).
         '''
-        await self.set_is_active_user(user_id, True)
+        await self.set_is_active_user(user_id, admin_id, True)
 
 

@@ -1,8 +1,7 @@
 from . import (
-    jwt_router,
+    gateway_router,
 )
 
-
 __all__ = [
-    "jwt_router",
+    "gateway_router",
 ]

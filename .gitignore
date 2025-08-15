@@ -203,7 +203,14 @@ cython_debug/
 **/.ruff_cache
 **/recived_images
 **/rendered_images
+
+
+# private_keys
 **/*.pem
+
+
+# db_migrations
+**/migrations/versions
 
 
 # IDE files
