@@ -1,10 +1,5 @@
-import asyncio
 import uvicorn
 from fastapi import FastAPI
-from loguru import logger
-
-from redis import Redis
-from valkey import Valkey
 
 from src.core.config import ConfigLoader
 from src.core.utils import EnvTools

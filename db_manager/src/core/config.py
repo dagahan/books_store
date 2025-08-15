@@ -1,9 +1,9 @@
+import sys
 import tomllib
-from typing import Any
 from pathlib import Path
+from typing import Any
 
 import colorama
-import sys
 from loguru import logger
 
 from src.core.utils import EnvTools, MethodTools

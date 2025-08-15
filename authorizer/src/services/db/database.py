@@ -1,4 +1,5 @@
 import colorama
+from bs_models import Base
 from loguru import logger
 from sqlalchemy import (
     text,
@@ -8,9 +9,9 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
     create_async_engine,
 )
+
 from src.core.config import ConfigLoader
 from src.core.utils import EnvTools
-from bs_models import Base
 
 
 class DataBase:

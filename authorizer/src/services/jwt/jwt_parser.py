@@ -1,19 +1,14 @@
-import colorama
+from datetime import datetime, timedelta, timezone
+from typing import Any, Dict, Union
+
+from bs_schemas import AccessPayload, RefreshPayload
+from fastapi import HTTPException, status
+from jose import JWTError, jwt
+from jose.exceptions import ExpiredSignatureError
 from loguru import logger
 
-from src.core.utils import EnvTools
 from src.core.config import ConfigLoader
-from typing import Any, Optional, Dict, Union
-from datetime import datetime, timedelta, timezone
-
-import uuid
-from fastapi import FastAPI, Request, HTTPException, Depends, status
-from jose import JWTError, jwt
-from pydantic import BaseModel
-from valkey import Valkey
-from bs_schemas import AccessPayload, RefreshPayload
-from jose.exceptions import ExpiredSignatureError
-from src.core.utils import StringTools
+from src.core.utils import EnvTools, StringTools
 from src.services.auth.sessions_manager import SessionsManager
 
 

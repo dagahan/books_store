@@ -19,7 +19,7 @@ def get_user_router(db: DataBase) -> APIRouter:
 
         except Exception as ex:
             logger.warning(f"Couldn't select an object. {ex}")
-            raise HTTPException(status_code=404, detail=f"There are no users")
+            raise HTTPException(status_code=404, detail="There are no users")
 
         if not users:
             raise HTTPException(status_code=404, detail="There are no users")
@@ -42,7 +42,7 @@ def get_user_router(db: DataBase) -> APIRouter:
 
         except Exception as ex:
             logger.warning(f"Couldn't select an object. {ex}")
-            raise HTTPException(status_code=404, detail=f"User not found")        
+            raise HTTPException(status_code=404, detail="User not found")
 
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
@@ -93,7 +93,7 @@ def get_user_router(db: DataBase) -> APIRouter:
 
         except Exception as ex:
             logger.warning(f"Couldn't select an object. {ex}")
-            raise HTTPException(status_code=404, detail=f"User not found")
+            raise HTTPException(status_code=404, detail="User not found")
 
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
@@ -125,7 +125,7 @@ def get_user_router(db: DataBase) -> APIRouter:
 
         except Exception as ex:
             logger.warning(f"Couldn't select an object. {ex}")
-            raise HTTPException(status_code=404, detail=f"User not found")
+            raise HTTPException(status_code=404, detail="User not found")
 
         if not user:
             raise HTTPException(status_code=404, detail="User not found")

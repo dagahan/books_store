@@ -1,16 +1,12 @@
-import asyncio
 import uvicorn
 from fastapi import FastAPI
 from loguru import logger
 
-from redis import Redis
-from valkey import Valkey
-
 from src.core.config import ConfigLoader
 from src.core.utils import EnvTools
 from src.services.db.database import DataBase
-from src.services.routers.user_router import *
 from src.services.routers.token_router import *
+from src.services.routers.user_router import *
 
 
 class Server:

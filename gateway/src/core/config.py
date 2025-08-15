@@ -1,6 +1,6 @@
 import tomllib
-from typing import Any
 from pathlib import Path
+from typing import Any
 
 import colorama
 from loguru import logger

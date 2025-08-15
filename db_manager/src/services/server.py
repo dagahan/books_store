@@ -1,4 +1,3 @@
-import asyncio
 import uvicorn
 from fastapi import FastAPI
 from loguru import logger
@@ -7,9 +6,9 @@ from src.core.config import ConfigLoader
 from src.core.utils import EnvTools
 from src.services.db.database import DataBase
 from src.services.routers import *
-from src.services.routers.user_router import get_user_router
 from src.services.routers.author_router import get_author_router
 from src.services.routers.delivery_groups_router import get_delivery_group_router
+from src.services.routers.user_router import get_user_router
 
 
 class Server:

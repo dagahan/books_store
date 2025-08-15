@@ -13,12 +13,12 @@ def get_token_router(db: DataBase) -> APIRouter:
     async def access(data: RequestAccess,
         session = Depends(db.get_session)
     ) -> ResponseAccess:
-        try: 
+        try:
             logger.debug(f"Test msg from user with access token: {data.access_token}")
 
         except Exception as ex:
             logger.error(f"Couldn't add an object. {ex}")
-            return HTTPException(status_code=500, detail=f"Cannot test an access token because of internal error..")
+            return HTTPException(status_code=500, detail="Cannot test an access token because of internal error..")
 
         return ResponseAccess(
             valid = await auth_service.validate_access_token(data.access_token)
@@ -29,7 +29,7 @@ def get_token_router(db: DataBase) -> APIRouter:
     async def refresh(data: RequestRefresh,
         session = Depends(db.get_session)
     ) -> ResponseRefresh:
-        try: 
+        try:
             payload = jwt_parser.validate_token(data.refresh_token)
 
             test_dsh = sessions_manager.get_test_dsh()
@@ -45,7 +45,7 @@ def get_token_router(db: DataBase) -> APIRouter:
 
         except Exception as ex:
             logger.error(f"Couldn't add an object. {ex}")
-            raise HTTPException(status_code=500, detail=f"Cannot refresh access token because of internal error.")
+            raise HTTPException(status_code=500, detail="Cannot refresh access token because of internal error.")
 
         return ResponseRefresh(
             access_token = await auth_service.get_access_token_by_refresh_token(data.refresh_token)

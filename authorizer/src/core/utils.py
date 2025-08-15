@@ -2,21 +2,17 @@ import json
 import os
 import os.path
 import shutil
+from datetime import datetime
 from inspect import getframeinfo, stack
 from pathlib import Path
-from typing import Any, List, Tuple, Iterable
-
-import chardet
-import colorama
-from loguru import logger
-import bcrypt
-
-from datetime import datetime
+from typing import Any, Iterable, List, Tuple
 from zoneinfo import ZoneInfo
 
-from dotenv import load_dotenv, find_dotenv
-from pathlib import Path
-
+import bcrypt
+import chardet
+import colorama
+from dotenv import find_dotenv, load_dotenv
+from loguru import logger
 from pydantic import ValidationError
 
 
@@ -122,7 +118,7 @@ class EnvTools:
         try:
             if EnvTools.is_running_inside_docker_compose():
                 return f"{service_name}-{EnvTools.load_env_var('COMPOSE_PROJECT_NAME')}"
-        except Exception as ex:
+        except Exception:
             pass
         return EnvTools.load_env_var(f"{service_name.upper()}_HOST")
     

@@ -58,7 +58,7 @@ def get_user_router(db: DataBase) -> APIRouter:
 
         except Exception as ex:
             logger.error(f"Couldn't add an object. {ex}")
-            raise HTTPException(status_code=500, detail=f"Cannot register a new user because of internal error.")
+            raise HTTPException(status_code=500, detail="Cannot register a new user because of internal error.")
         
         logger.debug(f"Registered user with UUID {user.id}")
 

@@ -1,17 +1,13 @@
-import asyncio
-import random
-import re
 import datetime
+import random
 from decimal import Decimal
-from typing import List, Optional
+from typing import List
 
+from bs_models import *
+from bs_schemas import *
 from loguru import logger
-from sqlalchemy import select, func
 
 from src.services.db.database import DataBase
-from bs_schemas import *
-from bs_models import *
-
 
 data_base = DataBase()
 

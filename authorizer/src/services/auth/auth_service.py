@@ -1,20 +1,15 @@
 import uuid
-from loguru import logger
-from datetime import datetime, timedelta, timezone
-from fastapi import HTTPException, status
-from valkey import Valkey
-from jose import JWTError, jwt
 
-from src.services.jwt.jwt_parser import JwtParser
-from src.services.db.database import DataBase
 from bs_models import User, UserRole
-from bs_schemas import ResponseRefresh
-from src.services.auth.sessions_manager import SessionsManager
-from src.core.utils import EnvTools
-
+from fastapi import HTTPException, status
+from jose import JWTError
+from loguru import logger
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import noload
+
+from src.services.auth.sessions_manager import SessionsManager
+from src.services.db.database import DataBase
+from src.services.jwt.jwt_parser import JwtParser
 
 
 class AuthService:
@@ -115,7 +110,7 @@ class AuthService:
                 )
             
             return self.jwt_parser.generate_access_token(
-                user_id=user_id, 
+                user_id=user_id,
                 session_id=session_id
             )
             
@@ -161,7 +156,7 @@ class AuthService:
                         detail="User not found"
                     )
 
-                if not option:                    
+                if not option:
                     self.sessions_manager.delete_session(user.id)
                 setattr(user, User.is_active, option)
                     

@@ -1,18 +1,13 @@
-from typing import Any, Iterable, List, Optional, Union
+from typing import Any, Optional
 from uuid import UUID as PythonUUID
 
-from loguru import logger
+from fastapi import HTTPException
+from models import *
+from schemas import *
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-import colorama
-
-from fastapi import APIRouter, HTTPException, Response, status, Depends
-from sqlalchemy.orm import noload
-from src.core.utils import ValidatingTools
 
 from src.services.db.database import DataBase
-from schemas import *
-from models import *
 
 
 class BaseRouter:
