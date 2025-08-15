@@ -182,6 +182,7 @@ def get_user_router(db: DataBase) -> APIRouter:
                 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid ban_user_id.")
 
             await auth_service.ban_user(user_id=ban_user_id, admin_id=admin_id)
+            sessions_manager.delete_all_sessions_for_user(ban_user_id)
             return BanResponse(
                 succsess=True
             )

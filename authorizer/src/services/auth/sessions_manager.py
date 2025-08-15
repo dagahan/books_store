@@ -98,6 +98,42 @@ class SessionsManager:
         session_key = f"Session:{session_id}"
         self.valkey_service.delete(session_key)
 
+    
+    def delete_all_sessions_for_user(self, user_id: uuid.UUID | str) -> int:
+        """
+        Deletes all sessions (Session keys:{sid}) belonging to the user user_id.
+        Returns the amount of deleted sessions.
+        """
+        uid: str = str(user_id)
+        deleted_total: int = 0
+        cursor: int | str = 0
+        pattern: str = "Session:*"
+
+        while True:
+            cursor, keys = self.valkey_service.scan(cursor=cursor, match=pattern, count=1000)
+
+            if keys:
+                pipe = self.valkey_service.pipeline()
+                for k in keys:
+                    pipe.hget(k, "sub")
+                subs = pipe.execute()
+
+                to_delete = [k for k, s in zip(keys, subs) if s == uid]
+
+                if to_delete:
+                    pipe_del = self.valkey_service.pipeline()
+                    for k in to_delete:
+                        pipe_del.delete(k)
+                    results = pipe_del.execute()
+                    deleted_total += sum(1 for r in results if r)
+
+            if cursor == 0 or cursor == "0":
+                break
+
+        if deleted_total:
+            logger.debug(f"Deleted {deleted_total} sessions for user: {uid}")
+        return deleted_total
+
 
     def is_session_exists(self, session_id: str) -> bool:
          return self.get_session(session_id) is not None
