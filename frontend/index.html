@@ -1,36 +1,442 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Books store</title>
-    <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-    <nav class="navbar">
-        <div class="navbar__container">
-            <a href="/" id="navbar__logo">books store</a>
-            <div class="navbar__toggle" id="mobile-menu">
-                <span class="bar"></span>
-                <span class="bar"></span>
-                <span class="bar"></span>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Books Store — Home</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Kumbh+Sans:wght@300;400;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <link rel="stylesheet" href="src/styles/main.css" />
+  </head>
+  <body>
+    <header class="header">
+      <div class="container header__top">
+        <a href="/" id="navbar__logo" class="logo">BOOKS STORE</a>
+
+        <form class="search" role="search" aria-label="Catalog search">
+          <input
+            class="search__input"
+            type="search"
+            placeholder="Book title, author, ISBN…"
+            aria-label="Search"
+          />
+          <button class="search__btn" type="submit" aria-label="Search">
+            <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M21 20.3 16.7 16a7.5 7.5 0 1 0-1 1L20 21l1-1zM5 11a6 6 0 1 1 12 0A6 6 0 0 1 5 11z"
+                fill="currentColor"
+              />
+            </svg>
+          </button>
+        </form>
+
+        <div class="header__actions">
+          <button class="icon-btn" aria-label="Favorites">
+            <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="m12 21-1.45-1.32C6.4 15.36 4 13.28 4 10.5 4 8 6 6 8.5 6c1.54 0 3.04.99 3.57 2.36h.87C13.46 6.99 14.96 6 16.5 6 19 6 21 8 21 10.5c0 2.78-2.4 4.86-6.55 9.18L12 21z"
+                fill="currentColor"
+              />
+            </svg>
+          </button>
+
+          <button class="icon-btn" aria-label="Profile">
+            <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-4.42 0-8 2.24-8 5v1h16v-1c0-2.76-3.58-5-8-5z"
+                fill="currentColor"
+              />
+            </svg>
+          </button>
+
+          <button class="icon-btn" aria-label="Cart">
+            <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M7 4h-2l-1 2v2h2l3.6 7.59-1.35 2.44A1.49 1.49 0 0 0 9.5 20h9v-2h-8.42a.25.25 0 0 1-.22-.37L10.1 15h6.45a1.5 1.5 0 0 0 1.34-.83L21 8H7.42l-.7-2z"
+                fill="currentColor"
+              />
+            </svg>
+          </button>
+
+          <!-- Кнопка авторизации + состояние пользователя -->
+          <div id="authControls" class="auth-controls">
+            <button id="openAuth" class="btn btn--accent">Sign In</button>
+
+            <div id="userMenu" class="user is-hidden">
+              <span id="userEmail" class="user__email"></span>
+              <button id="logoutBtn" class="btn btn--ghost">Sign Out</button>
             </div>
-            <ul class="navbar__menu">
-                <li class="navbar__item">
-                    <a href="/" class="navbar__links"> Home </a>
-                </li>
-                <li class="navbar__item">
-                    <a href="/tech.html" class="navbar__links"> Tech </a>
-                </li>
-                <li class="navbar__item">
-                    <a href="/" class="navbar__links"> Products </a>
-                </li>
-                <li class="navbar__btn">
-                    <a href="/" class="button"> Sign Up </a>
-                </li>
-            </ul>
+          </div>
+
+          <!-- Бургер -->
+          <button
+            id="mobile-menu"
+            class="nav__toggle"
+            aria-label="Open menu"
+            aria-expanded="false"
+            aria-controls="nav"
+          >
+            <span class="bar"></span>
+            <span class="bar"></span>
+            <span class="bar"></span>
+          </button>
         </div>
-    </nav>
-    <script src="app.js" defer></script>
-</body>
+      </div>
+
+      <!-- Nav -->
+      <nav id="nav" class="nav">
+        <div class="container nav__row">
+          <ul class="nav__menu">
+            <li class="nav__item nav__item--has-sub">
+              <button
+                class="nav__link"
+                data-toggle="submenu"
+                aria-expanded="false"
+              >
+                Catalog
+              </button>
+              <div class="nav__submenu" role="menu" aria-label="Categories">
+                <a href="#" role="menuitem">Fiction</a>
+                <a href="#" role="menuitem">Non-fiction</a>
+                <a href="#" role="menuitem">Business & Careers</a>
+                <a href="#" role="menuitem">Science & Technology</a>
+                <a href="#" role="menuitem">Children</a>
+                <a href="#" role="menuitem">Comics & Manga</a>
+              </div>
+            </li>
+            <li class="nav__item"><a class="nav__link" href="#">New Arrivals</a></li>
+            <li class="nav__item">
+              <a class="nav__link" href="#">Bestsellers</a>
+            </li>
+            <li class="nav__item"><a class="nav__link" href="#">Deals</a></li>
+            <li class="nav__item">
+              <a class="nav__link" href="#">Collections</a>
+            </li>
+          </ul>
+        </div>
+      </nav>
+    </header>
+
+    <!-- Hero -->
+    <section class="hero">
+      <div class="container hero__grid">
+        <div class="hero__text">
+          <h1>Books You’ll Want to Read</h1>
+          <p>Fast delivery, curated selections, and fair prices.</p>
+          <div class="hero__cta">
+            <a class="btn btn--accent" href="#">Open Catalog</a>
+            <a class="btn btn--ghost" href="#">New This Week</a>
+          </div>
+        </div>
+
+        <div class="hero__visual" aria-hidden="true">
+          <div class="poster"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Chips / categories -->
+    <section class="chips">
+      <div class="container chips__row" role="list">
+        <a class="chip" role="listitem" href="#">Fantasy</a>
+        <a class="chip" role="listitem" href="#">Popular Science</a>
+        <a class="chip" role="listitem" href="#">Psychology</a>
+        <a class="chip" role="listitem" href="#">Management</a>
+        <a class="chip" role="listitem" href="#">Detectives</a>
+        <a class="chip" role="listitem" href="#">Comics</a>
+        <a class="chip" role="listitem" href="#">Teens</a>
+        <a class="chip" role="listitem" href="#">Gifts</a>
+      </div>
+    </section>
+
+    <!-- Products -->
+    <section class="products">
+      <div class="container">
+        <div class="section-head">
+          <h2>Weekly Hits</h2>
+          <a class="link" href="#">View All</a>
+        </div>
+
+        <div class="grid grid--cards">
+          <article class="card">
+            <div class="card__media"></div>
+            <h3 class="card__title">Neural Networks for Everyone</h3>
+            <p class="card__meta">I. Avtorov</p>
+            <div class="card__row">
+              <div class="price">
+                <span class="price__now">₽ 790</span>
+                <span class="price__old">₽ 990</span>
+              </div>
+              <button class="btn btn--small">Add to Cart</button>
+            </div>
+          </article>
+
+          <article class="card">
+            <div class="card__media"></div>
+            <h3 class="card__title">How to Read More</h3>
+            <p class="card__meta">A. Chitatel</p>
+            <div class="card__row">
+              <div class="price">
+                <span class="price__now">₽ 520</span>
+              </div>
+              <button class="btn btn--small">Add to Cart</button>
+            </div>
+          </article>
+
+          <article class="card">
+            <div class="card__media"></div>
+            <h3 class="card__title">Interface Design</h3>
+            <p class="card__meta">Yu. UI</p>
+            <div class="card__row">
+              <div class="price">
+                <span class="price__now">₽ 1 190</span>
+              </div>
+              <button class="btn btn--small">Add to Cart</button>
+            </div>
+          </article>
+
+          <article class="card">
+            <div class="card__media"></div>
+            <h3 class="card__title">Marketing Without Filler</h3>
+            <p class="card__meta">S. Prodazh</p>
+            <div class="card__row">
+              <div class="price">
+                <span class="price__now">₽ 840</span>
+                <span class="price__old">₽ 1 050</span>
+              </div>
+              <button class="btn btn--small">Add to Cart</button>
+            </div>
+          </article>
+
+          <article class="card">
+            <div class="card__media"></div>
+            <h3 class="card__title">Physics Made Simple</h3>
+            <p class="card__meta">N. Uchenykh</p>
+            <div class="card__row">
+              <div class="price">
+                <span class="price__now">₽ 690</span>
+              </div>
+              <button class="btn btn--small">Add to Cart</button>
+            </div>
+          </article>
+
+          <article class="card">
+            <div class="card__media"></div>
+            <h3 class="card__title">The Leader’s Path</h3>
+            <p class="card__meta">M. Timlid</p>
+            <div class="card__row">
+              <div class="price">
+                <span class="price__now">₽ 930</span>
+              </div>
+              <button class="btn btn--small">Add to Cart</button>
+            </div>
+          </article>
+
+          <article class="card">
+            <div class="card__media"></div>
+            <h3 class="card__title">Weekend Reads</h3>
+            <p class="card__meta">Anthology</p>
+            <div class="card__row">
+              <div class="price">
+                <span class="price__now">₽ 410</span>
+              </div>
+              <button class="btn btn--small">Add to Cart</button>
+            </div>
+          </article>
+
+          <article class="card">
+            <div class="card__media"></div>
+            <h3 class="card__title">A Fireside Mystery</h3>
+            <p class="card__meta">A. Avtor</p>
+            <div class="card__row">
+              <div class="price">
+                <span class="price__now">₽ 560</span>
+              </div>
+              <button class="btn btn--small">Add to Cart</button>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- Promos -->
+    <section class="promos">
+      <div class="container grid grid--promo">
+        <a class="promo" href="#">
+          <div class="promo__content">
+            <h3>Up to 40% Off</h3>
+            <p>Summer Selection</p>
+          </div>
+        </a>
+
+        <a class="promo promo--alt" href="#">
+          <div class="promo__content">
+            <h3>Editor’s Picks</h3>
+            <p>Top Books of the Month</p>
+          </div>
+        </a>
+      </div>
+    </section>
+
+    <!-- Newsletter -->
+    <section class="newsletter">
+      <div class="container newsletter__box">
+        <h2>Subscribe to New Releases</h2>
+        <form class="newsletter__form">
+          <input type="email" placeholder="Your email" aria-label="Email" />
+          <button class="btn btn--accent" type="submit">Subscribe</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="container footer__grid">
+        <div>
+          <div class="logo logo--small">BOOKS STORE</div>
+          <p class="muted">Online bookstore. © 2025</p>
+        </div>
+        <nav class="footer__col">
+          <h4>For Customers</h4>
+          <a href="#">Delivery</a>
+          <a href="#">Payment</a>
+          <a href="#">Returns</a>
+        </nav>
+        <nav class="footer__col">
+          <h4>About the Store</h4>
+          <a href="#">About Us</a>
+          <a href="#">Careers</a>
+          <a href="#">Contacts</a>
+        </nav>
+        <nav class="footer__col">
+          <h4>Categories</h4>
+          <a href="#">Fiction</a>
+          <a href="#">Non-fiction</a>
+          <a href="#">Children</a>
+        </nav>
+      </div>
+    </footer>
+
+    <!-- ===== AUTH MODAL ===== -->
+    <dialog id="authDialog" class="auth">
+      <form id="authForm" class="auth__panel" method="dialog" novalidate>
+        <header class="auth__header">
+          <h3 id="authTitle">Sign In</h3>
+          <button class="auth__close" aria-label="Close" type="button">
+            ✕
+          </button>
+        </header>
+
+        <!-- LOGIN VIEW -->
+        <div class="auth__view" data-view="login">
+          <label class="field">
+            <span>Username</span>
+            <input
+              type="text"
+              name="user_name"
+              required
+              autocomplete="username"
+            />
+          </label>
+          <label class="field">
+            <span>Password</span>
+            <input
+              type="password"
+              name="password"
+              required
+              autocomplete="current-password"
+            />
+          </label>
+          <button class="btn btn--accent" type="submit">Sign In</button>
+          <p class="muted auth__swap">
+            Don’t have an account?
+            <button type="button" class="link-like" data-go="register">
+              Register
+            </button>
+          </p>
+        </div>
+
+        <!-- REGISTER VIEW -->
+        <div class="auth__view is-hidden" data-view="register">
+          <label class="field">
+            <span>Username</span>
+            <input
+              type="text"
+              name="user_name"
+              required
+              autocomplete="username"
+              placeholder="UserName332"
+            />
+          </label>
+          <label class="field">
+            <span>Password</span>
+            <input
+              type="password"
+              name="password"
+              required
+              minlength="6"
+              autocomplete="new-password"
+              placeholder="Qwerty123"
+            />
+          </label>
+          <label class="field">
+            <span>First Name</span>
+            <input
+              type="text"
+              name="first_name"
+              required
+              placeholder="Nikita"
+            />
+          </label>
+          <label class="field">
+            <span>Last Name</span>
+            <input type="text" name="last_name" required placeholder="Usov" />
+          </label>
+          <label class="field">
+            <span>Middle Name</span>
+            <input
+              type="text"
+              name="middle_name"
+              required
+              placeholder="Ivanovich"
+            />
+          </label>
+          <label class="field">
+            <span>Phone</span>
+            <input
+              type="tel"
+              name="phone"
+              required
+              inputmode="numeric"
+              pattern="[0-9]{10,15}"
+              placeholder="73335744385"
+            />
+          </label>
+          <input
+            type="hidden"
+            name="dsh"
+            value="true test dsh is in backend."
+          />
+
+          <button class="btn btn--accent" type="submit">Create Account</button>
+          <p class="muted auth__swap">
+            Already with us?
+            <button type="button" class="link-like" data-go="login">
+              Sign In
+            </button>
+          </p>
+        </div>
+
+        <p class="auth__error" role="alert" hidden></p>
+      </form>
+    </dialog>
+
+    <script type="module" src="./dist/main.js"></script>
+  </body>
 </html>
