@@ -175,8 +175,10 @@ def get_user_router(db: DataBase) -> APIRouter:
         The user's ban. Requires valid access from the administrator.
         """
         try:
-            admin_id, _ = await base_router.require_admin(credentials, session)
-
+            role = await base_router.check_user_role(credentials, session)
+            if role not in (UserRole.admin, UserRole.god):
+                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin rights required.")
+                
             try:
                 ban_user_id: uuid.UUID = data.ban_user_id if isinstance(data.ban_user_id, uuid.UUID) else uuid.UUID(str(data.ban_user_id))
             except Exception:
@@ -205,7 +207,9 @@ def get_user_router(db: DataBase) -> APIRouter:
         The user's unban. Requires valid access from the administrator.
         """
         try:
-            admin_id, _ = await base_router.require_admin(credentials, session)
+            role = await base_router.check_user_role(credentials, session)
+            if role not in (UserRole.admin, UserRole.god):
+                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin rights required.")
 
             try:
                 unban_user_id: uuid.UUID = data.unban_user_id if isinstance(data.unban_user_id, uuid.UUID) else uuid.UUID(str(data.unban_user_id))

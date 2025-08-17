@@ -7,6 +7,7 @@ def get_gateway_router(db: DataBase) -> APIRouter:
     jwt_parser = JwtParser()
     base_router = BaseRouter(db)
     auth_service = AuthService(db)
+    cors_tools = CorsTools()
 
 
     @router.api_route("/{endpoint_path:path}", methods=["GET","POST","PUT","PATCH","DELETE","OPTIONS","HEAD"])
@@ -15,6 +16,9 @@ def get_gateway_router(db: DataBase) -> APIRouter:
         request: Request,
         credentials: HTTPAuthorizationCredentials = Depends(HTTPBearer(auto_error=False)),
     ):
+        if request.method == "OPTIONS":
+            return cors_tools.build_cors_preflight_response(request, allowed_origins=base_router.ALLOWED_ORIGINS)
+
         if not base_router.is_public_endpoint(request.method, endpoint_path):
             if credentials is None or not credentials.credentials:
                 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing Authorization")
@@ -71,7 +75,11 @@ def get_gateway_router(db: DataBase) -> APIRouter:
             raise HTTPException(status_code=502, detail=f"Upstream request failed: {exc}") from exc
 
         response_headers = base_router.filter_response_headers(response.headers)
-        
+        cors_tools.add_cors_headers_on_response(
+            request,
+            response_headers,
+            allowed_origins=base_router.ALLOWED_ORIGINS,
+        ) 
         return Response(content=response.content, status_code=response.status_code, headers=response_headers)
 
 

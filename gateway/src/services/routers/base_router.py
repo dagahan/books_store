@@ -21,6 +21,7 @@ from src.core.config import ConfigLoader
 from src.core.utils import EnvTools, ValidatingTools
 from src.services.jwt.jwt_parser import JwtParser
 from src.services.auth.auth_service import AuthService
+from src.services.cors.cors import CorsTools
 
 
 class BaseRouter:
@@ -48,6 +49,10 @@ class BaseRouter:
             ("GET", ("tokens", "access")),
             ("POST", ("tokens", "refresh")),
         }
+        self.ALLOWED_ORIGINS = {
+            "http://127.0.0.1:5500",
+            "http://localhost:5500",
+        }
 
 
     def path_segments(self, path: str) -> List[str]:
@@ -72,22 +77,14 @@ class BaseRouter:
         return self.SERVICE_MAP.get(prefix)
 
     
-    def get_bearer_token(self, request: Request) -> Optional[str]:
-        auth = request.headers.get("authorization")
-        if not auth:
-            return None
-        scheme, _, token = auth.partition(" ")
-        return token if scheme.lower() == "bearer" else None
-
-
     def _normalize(self, name: str) -> str:
         return name.lower().strip()
 
 
     def filter_request_headers(self, incoming_headers: dict, upstream_host: str, client_ip: Optional[str]) -> dict:
         """
-        Удаляем hop-by-hop, заголовки, указанные в Connection,
-        удаляем Host, добавляем/дописываем X-Forwarded-For.
+        Removing the hop-by-hop headers specified in the Connection,
+        deleting the Host, adding/adding X-Forwarded-For.
         """
         headers = dict(incoming_headers)
 
