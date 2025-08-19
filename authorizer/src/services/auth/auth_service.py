@@ -113,7 +113,7 @@ class AuthService:
                 user_id=user_id,
                 session_id=session_id,
                 refresh_token=refresh_token,
-                make_refresh_token_used=True,
+                make_old_refresh_token_used=True,
             )
             
         except JWTError as ex:

@@ -70,7 +70,13 @@ class JwtParser:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
 
 
-    def generate_refresh_token(self, user_id: str, session_id: str):
+    def generate_refresh_token(
+        self,
+        user_id: str,
+        session_id: str,
+        refresh_token: str = None,
+        make_old_refresh_token_used: bool = True
+    ) -> str:
         expires_at = int((
             datetime.now(timezone.utc)
             + timedelta(days=self.refresh_token_expire_days)
@@ -89,6 +95,9 @@ class JwtParser:
             ish=StringTools.hash_string(self.sessions_manager.get_test_client_ip()),
         )
 
+        if make_old_refresh_token_used:
+            self.make_refresh_token_invalid(refresh_token)
+
         return jwt.encode(jwt_payload.model_dump(), self.private_key, algorithm=self.algorithm)
 
 
@@ -106,15 +115,15 @@ class JwtParser:
         ttl: int = max(1, (exp_time_stamp - TimeTools.now_time_stamp())) if exp_time_stamp is not None else 1
 
         key: str = f"Invalid_refresh:{refresh_token}"
-        self.sessions_manager.valkey_service.set(key, "1", ex=ttl)
+        self.sessions_manager.valkey_service.valkey.set(key, "1", ex=ttl)
 
 
     def is_refresh_token_in_invalid_list(self, refresh_token: str) -> bool:
         key: str = f"Invalid_refresh:{refresh_token}"
-        return self.sessions_manager.valkey_service.exists(key) == 1
+        return self.sessions_manager.valkey_service.valkey.exists(key) == 1
         
     
-    def generate_access_token(self, user_id: str, session_id: str, refresh_token: str, make_refresh_token_used: bool):
+    def generate_access_token(self, user_id: str, session_id: str, refresh_token: str, make_old_refresh_token_used: bool = True):
         if refresh_token is not None and self.is_refresh_token_in_invalid_list(refresh_token):
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh token already used")
 
@@ -125,7 +134,7 @@ class JwtParser:
             exp=expires_at,
         )
 
-        if make_refresh_token_used:
+        if make_old_refresh_token_used:
             self.make_refresh_token_invalid(refresh_token)
 
         return jwt.encode(jwt_payload.model_dump(), self.private_key, algorithm=self.algorithm)

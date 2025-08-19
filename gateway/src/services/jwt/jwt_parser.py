@@ -106,12 +106,12 @@ class JwtParser:
         ttl: int = max(1, (exp_time_stamp - TimeTools.now_time_stamp())) if exp_time_stamp is not None else 1
 
         key: str = f"Invalid_refresh:{refresh_token}"
-        self.sessions_manager.valkey_service.set(key, "1", ex=ttl)
+        self.sessions_manager.valkey_service.valkey.set(key, "1", ex=ttl)
 
 
     def is_refresh_token_in_invalid_list(self, refresh_token: str) -> bool:
         key: str = f"Invalid_refresh:{refresh_token}"
-        return self.sessions_manager.valkey_service.exists(key) == 1
+        return self.sessions_manager.valkey_service.valkey.exists(key) == 1
         
     
     def generate_access_token(self, user_id: str, session_id: str, refresh_token: str, make_refresh_token_used: bool):

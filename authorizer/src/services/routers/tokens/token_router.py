@@ -32,17 +32,26 @@ def get_token_router(db: DataBase) -> APIRouter:
         try:
             payload = jwt_parser.validate_token(data.refresh_token)
 
-            if not sessions_manager.is_session_exists(payload.get("sid")):
+            session_id: str = payload.get("sid")
+            user_id: str = payload.get("sub")
+
+            if not sessions_manager.is_session_exists(session_id):
                 return HTTPException(status.HTTP_401_UNAUTHORIZED, detail="Session is expired.")
 
-            logger.debug(f"New access token generated with refresh token for user: {payload.get("sub")}")
+            logger.debug(f"New access token generated with refresh token for user: {user_id}")
 
         except Exception as ex:
             logger.error(f"Couldn't add an object. {ex}")
             raise HTTPException(status_code=500, detail="Cannot refresh access token because of internal error.")
 
         return ResponseRefresh(
-            access_token = await auth_service.get_access_token_by_refresh_token(data.refresh_token)
+            access_token = await auth_service.get_access_token_by_refresh_token(data.refresh_token),
+            refresh_token = jwt_parser.generate_refresh_token(
+                user_id,
+                session_id,
+                data.refresh_token,
+                make_old_refresh_token_used=True
+            ),
         )
         
 

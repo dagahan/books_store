@@ -6,7 +6,6 @@ from contextlib import asynccontextmanager
 from typing import Optional
 import os
 import mimetypes
-import uuid
 
 
 class S3Client:
@@ -60,7 +59,7 @@ class S3Client:
         ext = os.path.splitext(filename or "")[1]
         if not ext:
             ext = mimetypes.guess_extension(content_type or "") or ".jpg"
-        return f"avatars/{user_id}/{uuid.uuid4().hex}{ext.lower()}"
+        return f"avatars/{user_id}/{ext.lower()}"
 
 
     async def upload_file(

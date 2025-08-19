@@ -5,7 +5,7 @@ from typing import Any, Dict, Optional
 
 from bs_schemas import Session
 from loguru import logger
-from valkey import Valkey
+from src.services.valkey.valkey import ValkeyService
 
 from src.core.utils import EnvTools, StringTools, TimeTools, ValidatingTools
 
@@ -14,12 +14,7 @@ class SessionsManager:
     def __init__(self) -> None:
         self.session_max_life_days = int(EnvTools.load_env_var("SESSIONS_MAX_LIFE_DAYS"))
         self.session_inactive_days = int(EnvTools.load_env_var("SESSIONS_INACTIVE_DAYS"))
-
-        self.valkey_service = Valkey(
-            host=EnvTools.get_service_ip("valkey"),
-            port=int(EnvTools.get_service_port("valkey")),
-            decode_responses=True
-        )
+        self.valkey_service = ValkeyService()
 
 
     def _days_to_seconds(self, days: int) -> int:
@@ -59,13 +54,13 @@ class SessionsManager:
             ish=ish,
         )
 
-        self.valkey_service.hset(key, mapping={k: str(v) for k, v in model.model_dump().items()})
+        self.valkey_service.valkey.hset(key, mapping={k: str(v) for k, v in model.model_dump().items()})
 
         ttl = self._clamped_ttl_seconds(now_time_stamp, mtl_time_stamp)
         if ttl > 0:
-            self.valkey_service.expire(key, ttl)
+            self.valkey_service.valkey.expire(key, ttl)
         else:
-            self.valkey_service.delete(key)
+            self.valkey_service.valkey.delete(key)
 
         logger.debug(f"Created new session: {str(sid)} for user: {user_id}")
 
@@ -86,17 +81,17 @@ class SessionsManager:
         ttl = self._clamped_ttl_seconds(now_ts, sess.mtl)
 
         if ttl <= 0:
-            self.valkey_service.delete(f"Session:{session_id}")
+            self.valkey_service.valkey.delete(f"Session:{session_id}")
             return False
 
-        self.valkey_service.expire(f"Session:{session_id}", ttl)
+        self.valkey_service.valkey.expire(f"Session:{session_id}", ttl)
         logger.debug(f"Touched session: {session_id}")
         return True
 
 
     def delete_session(self, session_id: str) -> None:
         session_key = f"Session:{session_id}"
-        self.valkey_service.delete(session_key)
+        self.valkey_service.valkey.delete(session_key)
 
     
     def delete_all_sessions_for_user(self, user_id: uuid.UUID | str) -> int:
@@ -110,10 +105,10 @@ class SessionsManager:
         pattern: str = "Session:*"
 
         while True:
-            cursor, keys = self.valkey_service.scan(cursor=cursor, match=pattern, count=1000)
+            cursor, keys = self.valkey_service.valkey.scan(cursor=cursor, match=pattern, count=1000)
 
             if keys:
-                pipe = self.valkey_service.pipeline()
+                pipe = self.valkey_service.valkey.pipeline()
                 for k in keys:
                     pipe.hget(k, "sub")
                 subs = pipe.execute()
@@ -121,7 +116,7 @@ class SessionsManager:
                 to_delete = [k for k, s in zip(keys, subs) if s == uid]
 
                 if to_delete:
-                    pipe_del = self.valkey_service.pipeline()
+                    pipe_del = self.valkey_service.valkey.pipeline()
                     for k in to_delete:
                         pipe_del.delete(k)
                     results = pipe_del.execute()
@@ -141,7 +136,7 @@ class SessionsManager:
 
     def get_session(self, session_id: str) -> Optional[Session]:
         session_key = f"Session:{session_id}"
-        data = self.valkey_service.hgetall(session_key)
+        data = self.valkey_service.valkey.hgetall(session_key)
         if not data:
             return None
         try:
