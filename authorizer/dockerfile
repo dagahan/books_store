@@ -8,7 +8,10 @@ RUN apk update && \
     curl \
     linux-headers \
     musl-dev \
-    rm -rf /var/cache/apk/*
+    ca-certificates \
+    tzdata \
+  && update-ca-certificates \
+  && rm -rf /var/cache/apk/*
 
 
 RUN adduser -D appuser && \

@@ -5,8 +5,8 @@ from loguru import logger
 from src.core.config import ConfigLoader
 from src.core.utils import EnvTools
 from src.services.db.database import DataBase
-from src.services.routers.token_router import *
-from src.services.routers.user_router import *
+from src.services.routers.tokens.token_router import *
+from src.services.routers.users.user_router import *
 
 
 class Server:

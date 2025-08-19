@@ -1,4 +1,4 @@
-from .base_router import *
+from ..base_router import *
 
 
 def get_token_router(db: DataBase) -> APIRouter:
@@ -9,7 +9,7 @@ def get_token_router(db: DataBase) -> APIRouter:
     auth_service = AuthService(db)
 
     
-    @router.get("/access", status_code=200)
+    @router.get("/access", status_code=200, response_model=ResponseAccess)
     async def access(data: RequestAccess,
         session = Depends(db.get_session)
     ) -> ResponseAccess:
@@ -25,7 +25,7 @@ def get_token_router(db: DataBase) -> APIRouter:
         )
 
     
-    @router.post("/refresh", status_code=201)
+    @router.post("/refresh", status_code=201, response_model=ResponseRefresh)
     async def refresh(data: RequestRefresh,
         session = Depends(db.get_session)
     ) -> ResponseRefresh:

@@ -12,12 +12,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.core.utils import ValidatingTools
 from src.core.config import ConfigLoader
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi import UploadFile, File
 
 from src.services.db.database import DataBase
 from src.services.jwt.jwt_parser import JwtParser
 from src.services.auth.auth_service import AuthService
+from src.services.media_process.media_processor import MediaProcessor
 from bs_schemas import *
 from bs_models import *
+from src.services.s3.s3 import S3Client
 from src.services.auth.sessions_manager import *
 from src.services.auth.auth_service import *
 from src.services.jwt import *

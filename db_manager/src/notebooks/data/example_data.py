@@ -143,7 +143,7 @@ async def seed_data() -> None:
                         middle_name=middle,
                         email=f"user{i}@example.com",
                         phone=str(base_phone + i),
-                        role=UserRole.user,
+                        role="user",
                         is_seller=False,
                     )
                 )

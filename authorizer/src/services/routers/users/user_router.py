@@ -1,4 +1,4 @@
-from .base_router import *
+from ..base_router import *
 
 
 def get_user_router(db: DataBase) -> APIRouter:
@@ -8,6 +8,8 @@ def get_user_router(db: DataBase) -> APIRouter:
     base_router = BaseRouter(db)
     bearer_scheme = HTTPBearer()
     auth_service = AuthService(db)
+    s3_service = S3Client()
+    media_processor = MediaProcessor()
 
 
     @router.post("/register", status_code=201, response_model=RegisterResponse)
@@ -135,10 +137,7 @@ def get_user_router(db: DataBase) -> APIRouter:
         Logout: Accepts the access_token, extracts the sid from the token, and deletes the corresponding session.
         """
         try:
-            if credentials is None or not credentials.credentials:
-                raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authorization header missing.")
-            
-            payload: Dict[str, Any] = base_router.get_payload_or_401(credentials)
+            payload: Dict[str, Any] = await base_router.get_payload_or_401(credentials)
 
             sid = payload.get("sid")
             if not sid:
@@ -161,7 +160,7 @@ def get_user_router(db: DataBase) -> APIRouter:
         except HTTPException:
             raise
         except Exception as ex:
-            logger.exception(f"Logout error: {ex}")
+            logger.error(f"Logout error: {ex}")
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal server error.")
 
 
@@ -193,7 +192,7 @@ def get_user_router(db: DataBase) -> APIRouter:
         except HTTPException:
             raise
         except Exception as ex:
-            logger.exception(f"Ban user error: {ex}")
+            logger.error(f"Ban user error: {ex}")
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal server error")
 
 
@@ -224,8 +223,81 @@ def get_user_router(db: DataBase) -> APIRouter:
         except HTTPException:
             raise
         except Exception as ex:
-            logger.exception(f"Unban user error: {ex}")
+            logger.error(f"Unban user error: {ex}")
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal server error")
+
+
+    @router.post("/upload_avatar", status_code=200, response_model=UploadAvatarResponse)
+    async def upload_avatar(
+        avatar: UploadFile = File(...),
+        credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
+        session = Depends(db.get_session),
+    ):
+        payload: Dict[str, Any] = await base_router.get_payload_or_401(credentials)
+        sub = payload.get("sub")
+
+        user: User = await session.get(
+                User, sub
+            )
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        if not avatar.content_type or not avatar.content_type.startswith("image/"):
+            raise HTTPException(status_code=400, detail="Only image/* allowed")
+
+        raw = await avatar.read()
+
+        result = media_processor.process_image(raw, avatar.content_type)
+
+        key = s3_service.make_key(sub, avatar.filename, result.meta.mime)
+
+        try:
+            await s3_service.upload_bytes(
+                data=result.data,
+                key=key,
+                content_type=result.meta.mime,
+            )
+
+        except Exception as ex:
+            logger.error(f"there is an exception during the avatar uploading for user: {sub}\n{ex}")
+            raise HTTPException(status_code=502, detail=f"S3 upload failed.")
+
+        try:
+            img = Image(
+                media_type="image",
+                bucket=s3_service.bucket_name,
+                key=key,
+                mime=result.meta.mime,
+                size=result.meta.size,
+                checksum_sha256=result.meta.checksum_sha256,
+                width=result.meta.width,
+                height=result.meta.height,
+                exif_stripped=result.meta.exif_stripped,
+                colorspace=result.meta.colorspace,
+            )
+
+            session.add(img)
+
+            await session.flush()
+            await session.refresh(img)
+
+            user.profile_image_id = img.id
+            await session.flush()
+            await session.commit()
+
+        except Exception:
+            await session.rollback()
+            try:
+                await s3_service.delete_object(key)
+
+            except Exception:
+                pass
+            raise HTTPException(status_code=500, detail="Failed to save avatar")
+
+        return UploadAvatarResponse(
+            succsess=True,
+        )
+
 
 
     return router
