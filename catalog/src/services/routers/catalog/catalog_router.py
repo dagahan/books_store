@@ -16,15 +16,14 @@ def get_catalog_router(db: DataBase) -> APIRouter:
     s3_service = S3Client()
     media_processor = MediaProcessor()
 
-
     
-    @router.get("/categories", response_model=CategoriesResponse)
+    @router.get("/product_types_by_categories", response_model=ProductTypesByCategoriesResponse)
     async def list_product_types(
-        data: CategoriesRequest,
-        credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
+        data: ProductTypesByCategoriesRequest,
+        # credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
         session: "AsyncSession" = Depends(db.get_session),
     ) -> CategoriesResponse:
-        payload: Dict[str, Any] = await base_router.get_payload_or_401(credentials)
+        # payload: Dict[str, Any] = await base_router.get_payload_or_401(credentials)
 
         query = select(
                 ProductType
@@ -36,9 +35,20 @@ def get_catalog_router(db: DataBase) -> APIRouter:
         result = await session.execute(query.order_by(ProductType.name))
         product_types = result.scalars().all()
 
-        return CategoriesResponse(
+        return ProductTypesByCategoriesResponse(
             product_types=ValidatingTools.validate_models_by_schema(product_types, ProductTypeDTO)
         )
+
+
+    @router.get("/categories", response_model=CategoriesResponse)
+    async def list_product_types(
+        # credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
+        session: "AsyncSession" = Depends(db.get_session),
+    ) -> CategoriesResponse:
+        # payload: Dict[str, Any] = await base_router.get_payload_or_401(credentials)
+        return CategoriesResponse(
+            categories=list(ProductTypeCategory)
+        ) 
 
 
 

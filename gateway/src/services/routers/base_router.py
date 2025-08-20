@@ -49,6 +49,8 @@ class BaseRouter:
             ("POST", ("users", "login")),
             ("GET", ("tokens", "access")),
             ("POST", ("tokens", "refresh")),
+            ("GET", ("catalog", "product_types_by_categories")),
+            ("GET", ("catalog", "categories")),
         }
         self.ALLOWED_ORIGINS = {
             "http://127.0.0.1:5500",
