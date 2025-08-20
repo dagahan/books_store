@@ -1,6 +1,7 @@
 import {
     log
 } from "@/analytics/logger";
+import { PRODUCT_CATEGORIES } from "@/types/categories";
 
 
 export function initNav() {
@@ -36,3 +37,31 @@ export function initNav() {
     });
   });
 }
+
+
+function renderCategories() {
+  const submenu = document.querySelector(".nav__submenu");
+  if (submenu) {
+    submenu.innerHTML = PRODUCT_CATEGORIES
+      .map(
+        (c) =>
+          `<a href="/catalog?category=${encodeURIComponent(c.key)}" role="menuitem">${c.label}</a>`
+      )
+      .join("");
+  }
+
+  const chipsRow = document.querySelector(".chips__row");
+  if (chipsRow) {
+    // покажем первые 8 «чипсов»
+    chipsRow.innerHTML = PRODUCT_CATEGORIES.slice(0, 8)
+      .map(
+        (c) =>
+          `<a class="chip" role="listitem" href="/catalog?category=${encodeURIComponent(c.key)}">${c.label}</a>`
+      )
+      .join("");
+  }
+}
+
+
+document.addEventListener("DOMContentLoaded", renderCategories);
+

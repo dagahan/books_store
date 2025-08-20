@@ -25,6 +25,10 @@ from bs_models import (
 
 from src.services.db.database import DataBase
 
+from sqlalchemy.orm import configure_mappers
+configure_mappers()
+
+
 
 def chunked(iterable: Iterable, size: int) -> Iterable[list]:
     it = iter(iterable)
@@ -95,29 +99,28 @@ LOCATIONS = [
     "Сургут, пр. Мира 40","Новороссийск, ул. Советская 11","Мурманск, ул. Ленинградская 5","Севастополь, пр. Нахимова 3",
 ]
 
+CATEGORIES = [
+    "FICTION","NONFICTION","BUSINESS","SCIENCE","SELF_HELP","PSYCHOLOGY","HISTORY","BIOGRAPHY",
+    "CHILDREN","YOUNG_ADULT","FANTASY","SCIENCE_FICTION","MYSTERY_THRILLER","ROMANCE","COMICS_MANGA",
+    "ART_PHOTOGRAPHY","COOKBOOKS_FOOD","HEALTH_FITNESS","EDUCATION_TEACHING","TRAVEL",
+]
 
-
-def utc_now_ts() -> int:
-    return int(dt.datetime.now(dt.timezone.utc).timestamp())
-
-
-def random_past_ts(max_days: int = 365 * 5) -> int:
-    d = dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=random.randint(0, max_days))
-    return int(d.timestamp())
 
 
 def random_publication_ts(year_from: int = 1200, year_to: int = 1969) -> int:
     y = random.randint(year_from, year_to)
     m = random.randint(1, 12)
     is_leap = (y % 4 == 0) and (y % 100 != 0 or y % 400 == 0)
-    days_in_month = [31, 29 if is_leap else 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][m - 1]
-    d = random.randint(1, days_in_month)
-    midnight = dt.datetime(y, m, d, tzinfo=dt.timezone.utc)
-    return int(midnight.timestamp())
+    dmax = [31, 29 if is_leap else 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][m - 1]
+    d = random.randint(1, dmax)
+    return int(dt.datetime(y, m, d, 0, 0).timestamp())
 
+
+def random_past_ts(max_days: int = 365 * 5) -> int:
+    d = dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=random.randint(0, max_days))
+    return int(d.timestamp())
 
 data_base = DataBase()
-
 BATCH = 500
 
 
@@ -143,7 +146,7 @@ async def seed_data() -> None:
                         middle_name=middle,
                         email=f"user{i}@example.com",
                         phone=str(base_phone + i),
-                        role="user",
+                        role=UserRole.user,
                         is_seller=False,
                     )
                 )
@@ -194,6 +197,9 @@ async def seed_data() -> None:
             for _ in range(n_product_types):
                 seller_choice = random.choice(sellers)
                 author_choice = random.choice(authors)
+                # если у тебя Enum Category в моделях:
+                # category = random.choice(list(Category))
+                category = random.choice(CATEGORIES)
                 product_types.append(
                     ProductType(
                         seller_id=seller_choice.id,
@@ -203,6 +209,7 @@ async def seed_data() -> None:
                         sale=round(random.uniform(0.0, 0.5), 3),
                         author_id=author_choice.id,
                         date_publication=random_publication_ts(),
+                        category=category,
                     )
                 )
             for batch in chunked(product_types, BATCH):
@@ -227,58 +234,6 @@ async def seed_data() -> None:
                 await session.flush()
             await session.commit()
             logger.info(f"{len(products)} products created.")
-
-            # ---------- PURCHASES, ITEMS, DELIVERIES ----------
-            n_purchases = random.randint(60, 160)
-            logger.info(f"Seeding {n_purchases} purchases with items and deliveries...")
-            purchases: List[Purchase] = []
-
-            for _ in range(n_purchases):
-                buyer = random.choice(users)
-                seller = random.choice(sellers)
-
-                delivery_group = DeliveryGroup(
-                    target_warehouse_id=random.choice(warehouses).id,
-                    target_user_id=buyer.id,
-                    status=random.choice(list(DeliveryGroupStatusEnum)),
-                )
-                session.add(delivery_group)
-                await session.flush()
-
-                purchase = Purchase(
-                    timestamp=random_past_ts(),
-                    payment_method=random.choice(list(PaymentMethodEnum)),
-                    delivery_group_id=delivery_group.id,
-                    buyer_id=buyer.id,
-                    seller_id=seller.user_id,
-                )
-                session.add(purchase)
-                await session.flush()
-
-                chosen_types = random.sample(product_types, k=min(8, len(product_types)))
-                for pt in chosen_types[: random.randint(1, 6)]:
-                    session.add(
-                        PurchaseItem(
-                            purchase_id=purchase.id,
-                            product_type_id=pt.id,
-                            quantity=random.randint(1, 8),
-                            unit_cost=pt.cost,
-                        )
-                    )
-
-                for _ in range(random.randint(0, 3)):
-                    if products:
-                        session.add(
-                            Delivery(
-                                product_id=random.choice(products).id,
-                                status=random.choice(list(DeliveryStatusEnum)),
-                            )
-                        )
-
-                purchases.append(purchase)
-
-            await session.commit()
-            logger.info(f"{len(purchases)} purchases created with items and deliveries.")
 
         except Exception:
             await session.rollback()

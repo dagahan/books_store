@@ -229,7 +229,7 @@ def get_user_router(db: DataBase) -> APIRouter:
 
     @router.post("/upload_avatar", status_code=200, response_model=UploadAvatarResponse)
     async def upload_avatar(
-        avatar: UploadFile = File(...),
+        data: UploadFile = File(...),
         credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
         session = Depends(db.get_session),
     ):
@@ -242,14 +242,14 @@ def get_user_router(db: DataBase) -> APIRouter:
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
 
-        if not avatar.content_type or not avatar.content_type.startswith("image/"):
+        if not data.content_type or not data.content_type.startswith("image/"):
             raise HTTPException(status_code=400, detail="Only image/* allowed")
 
-        raw = await avatar.read()
+        raw = await data.read()
 
-        result = media_processor.process_image(raw, avatar.content_type)
+        result = media_processor.process_image(raw, data.content_type)
 
-        key = s3_service.make_key(sub, avatar.filename, result.meta.mime)
+        key = s3_service.make_key(sub, data.filename, result.meta.mime)
 
         try:
             await s3_service.upload_bytes(
@@ -297,7 +297,6 @@ def get_user_router(db: DataBase) -> APIRouter:
         return UploadAvatarResponse(
             succsess=True,
         )
-
 
 
     return router

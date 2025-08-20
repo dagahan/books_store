@@ -42,6 +42,7 @@ class BaseRouter:
         self.SERVICE_MAP = {
             "users":  f"http://{EnvTools.get_service_ip("authorizer")}:{EnvTools.get_service_port("authorizer")}",
             "tokens": f"http://{EnvTools.get_service_ip("authorizer")}:{EnvTools.get_service_port("authorizer")}",
+            "catalog": f"http://{EnvTools.get_service_ip("catalog")}:{EnvTools.get_service_port("catalog")}",
         }
         self.PUBLIC_ENDPOINTS = {
             ("POST", ("users", "register")),
