@@ -10,7 +10,7 @@ from src.services.server import Server
 
 
 class Service:
-    def __init__(self):
+    def __init__(self) -> None:
         self.config = ConfigLoader()
         self.intercept_handler = InterceptHandler()
         self.logger_setup = LogSetup()
@@ -18,7 +18,7 @@ class Service:
         self.service_name = self.config.get("project", "name")
 
 
-    def run_service(self):
+    def run_service(self) -> None:
         self.logger_setup.configure()
         asyncio.run(self.server.run_server())
 

@@ -1,6 +1,9 @@
-from . import (
-    token_router,
+from .users import (
     user_router,
+)
+
+from .tokens import (
+    token_router,
 )
 
 __all__ = [

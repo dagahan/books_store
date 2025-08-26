@@ -1,10 +1,10 @@
-import { initNav } from "@/ui/nav";
+import { initNav, renderCategoriesEverywhere} from "@/ui/nav";
 import { initAuthModal } from "@/ui/auth-modal";
 import { Logger, log } from "@/analytics/logger";
 import { API_BASE } from "@/api/client";
 
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
     Logger.i.init({
         getAccessToken: () => localStorage.getItem("bs_access"),
     });
@@ -17,4 +17,5 @@ document.addEventListener("DOMContentLoaded", () => {
 
     initNav();
     initAuthModal();
+    await renderCategoriesEverywhere();
 });
