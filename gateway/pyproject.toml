@@ -22,15 +22,64 @@ dependencies = [
     "httpx[http2]==0.28.1",
     "python-jose[cryptography]==3.3.0",
     "cryptography==42.0.8",
-    "bs_models @ git+https://github.com/dagahan/bs_models.git",
+    "aiobotocore==2.24.1",
+"bs_models @ git+https://github.com/dagahan/bs_models.git",
     ]
 
 
-[tool.ruff]
-line-length = 88
+[project.optional-dependencies]
+dev = [
+    "ruff==0.12.10",
+    "mypy>=1.17.1",
+]
 
+
+[tool.ruff]
+target-version = "py313"
+line-length = 100
 
 [tool.ruff.lint]
-extend-select = ["W", "N", "R", "I"]
-# Letters means included rules classes from PEP8
-ignore = ["W293", "F403", "F405"]
+select = ["E", "F", "B", "UP", "I", "W", "N", "ANN", "TCH"]
+ignore = ["ANN401", "W293", "F403", "F405"]
+unfixable = ["ANN"]
+
+
+[tool.mypy]
+python_version = "3.13"
+strict = true
+warn_unused_configs = true
+show_error_codes = true
+pretty = true
+
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+disallow_untyped_calls = true
+no_implicit_optional = true
+warn_return_any = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+check_untyped_defs = true
+
+plugins = [
+  "pydantic.mypy",
+  "sqlalchemy.ext.mypy.plugin", 
+]
+
+[mypy-aiobotocore]
+ignore_missing_imports = true
+[mypy-botocore]
+ignore_missing_imports = true
+[mypy-loguru]
+ignore_missing_imports = true
+[mypy-starlette]
+ignore_missing_imports = true
+[mypy-fastapi]
+ignore_missing_imports = true
+
+
+[db]
+echo = false
+pool_size = 5
+max_overflow = 10
+
+
