@@ -6,11 +6,12 @@ from loguru import logger
 
 
 class InterceptHandler(logging.Handler):
-    def emit(self, record) -> None:
+    def emit(self, record: logging.LogRecord) -> None:
+        log_level: int
         try:
-            level = logger.level(record.levelname).name
+            log_level = logger.level(record.levelname).no
         except ValueError:
-            level = record.levelno
+            log_level = record.levelno
 
         frame, depth = inspect.currentframe(), 0
         while frame and depth < 10:
@@ -19,7 +20,7 @@ class InterceptHandler(logging.Handler):
             frame = frame.f_back
 
         logger.opt(depth=depth, exception=record.exc_info, record=True).log(
-            level, record.getMessage()
+            log_level, record.getMessage()
         )
 
 

@@ -15,7 +15,7 @@ services:
     ports:
       - "${NGINX_PORT}:${NGINX_PORT}"
     networks:
-      - alchemy_net
+      - books_store_net
     restart: ${DOCKER_CONTAINERS_RESTART}
     develop:
       watch:
@@ -36,7 +36,7 @@ services:
     ports:
       - "${GATEWAY_PORT}:${GATEWAY_PORT}"
     networks:
-      - alchemy_net
+      - books_store_net
     restart: ${DOCKER_CONTAINERS_RESTART}
     develop:
       watch:
@@ -57,7 +57,28 @@ services:
     ports:
       - "${AUTHORIZER_PORT}:${AUTHORIZER_PORT}"
     networks:
-      - alchemy_net
+      - books_store_net
+    restart: ${DOCKER_CONTAINERS_RESTART}
+    develop:
+      watch:
+        - action: rebuild
+          path: ./
+
+
+  catalog:
+    build:
+      context: ./catalog
+      dockerfile: dockerfile
+    image: catalog-${COMPOSE_PROJECT_NAME}
+    container_name: catalog-${COMPOSE_PROJECT_NAME}
+    env_file: .env
+    environment:
+      RUNNING_INSIDE_DOCKER: 1
+      COMPOSE_PROJECT_NAME: ${COMPOSE_PROJECT_NAME}
+    ports:
+      - "${CATALOG_PORT}:${CATALOG_PORT}"
+    networks:
+      - books_store_net
     restart: ${DOCKER_CONTAINERS_RESTART}
     develop:
       watch:
@@ -78,7 +99,7 @@ services:
     ports:
       - "${VALKEY_PORT}:${VALKEY_PORT}"
     networks:
-      - alchemy_net
+      - books_store_net
     volumes:
       - ./valkey-data:/var/lib/valkey/data
     restart: ${DOCKER_CONTAINERS_RESTART}
@@ -101,7 +122,7 @@ services:
     ports:
       - "${POSTGRES_PORT}:${POSTGRES_PORT}"
     networks:
-      - alchemy_net
+      - books_store_net
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 5s
@@ -117,6 +138,6 @@ services:
 
 
 networks:
-  alchemy_net:
+  books_store_net:
     driver: bridge
-    name: alchemy_net
+    name: books_store_net

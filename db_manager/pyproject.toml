@@ -9,7 +9,6 @@ dependencies = [
     "psycopg[binary]==3.2.9",
     "python-dotenv==1.1.0",
     "asyncpg==0.30.0",
-    "alembic==1.12.0",
     "fastapi==0.116.0",
     "uvicorn==0.35.0",
     "chardet==5.2.0",    
@@ -23,7 +22,7 @@ dependencies = [
     "notebook>=7.0",
     "jupyterlab>=4.0",
     "jinja2>=3.1.2",
-    "bs_models @ git+https://github.com/dagahan/bs_models.git"
+"bs_models @ git+https://github.com/dagahan/bs_models.git",
 ]
 
 

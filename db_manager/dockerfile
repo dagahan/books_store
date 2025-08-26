@@ -6,7 +6,12 @@ RUN apk update && \
     build-base \
     git \
     curl \
-    rm -rf /var/cache/apk/*
+    linux-headers \
+    musl-dev \
+    ca-certificates \
+    tzdata \
+  && update-ca-certificates \
+  && rm -rf /var/cache/apk/*
 
 
 RUN adduser -D appuser && \
