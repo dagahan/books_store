@@ -1,8 +1,44 @@
-from ..base_router import *
+from __future__ import annotations
+
+from typing import Any, Optional, Dict, TYPE_CHECKING
+import uuid
+
+from fastapi import APIRouter, HTTPException, status, Depends, UploadFile, File
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from loguru import logger
+
+from src.core.utils import StringTools
+from src.services.jwt.jwt_parser import JwtParser
+from src.services.auth.auth_service import AuthService
+from src.services.media_process.media_processor import MediaProcessor
+from src.services.s3.s3 import S3Client
+from src.services.auth.sessions_manager import SessionsManager
+from src.services.routers.base_router import BaseRouter
+
+from bs_models import User, Image  # type: ignore[import-untyped]
+from bs_schemas import (  # type: ignore[import-untyped]
+    RegisterResponse,
+    LoginResponse,
+    LogoutResponse,
+    BanResponse,
+    UnbanResponse,
+    UploadAvatarResponse,
+    UserCreateDTO,
+    LoginRequest,
+    BanRequest,
+    UnbanRequest,
+    UserRole,
+)
+
+if TYPE_CHECKING:
+    from sqlalchemy.ext.asyncio import AsyncSession
+    from src.services.db.database import DataBase
+    
 
 
 def get_user_router(db: DataBase) -> APIRouter:
     router = APIRouter(prefix="/users", tags=["users"])
+
     sessions_manager = SessionsManager()
     jwt_parser = JwtParser()
     base_router = BaseRouter(db)
@@ -15,7 +51,7 @@ def get_user_router(db: DataBase) -> APIRouter:
     @router.post("/register", status_code=201, response_model=RegisterResponse)
     async def register(
         data: UserCreateDTO,
-        session = Depends(db.get_session)
+        session: "AsyncSession" = Depends(db.get_session)
     ) -> RegisterResponse:
         
         if data.email and not await base_router.is_attribute_unique(session, User.email, data.email):
@@ -47,16 +83,18 @@ def get_user_router(db: DataBase) -> APIRouter:
             user_id: str = str(user.id) # converting to string because JSON can't serialize UUID :/
 
             test_dsh: Dict[str, str] = sessions_manager.get_test_dsh()
-            session_id: str = sessions_manager.create_session(
-                user_id,
-                user_agent=test_dsh.get("user_agent"),
-                client_id=test_dsh.get("client_id"),
-                local_system_time_zone=test_dsh.get("local_system_time_zone"),
-                platform=test_dsh.get("platform"),
+            session_create_result = sessions_manager.create_session(
+                user_id=user_id,
+                user_agent=test_dsh["user_agent"], 
+                client_id=test_dsh["client_id"],
+                local_system_time_zone=test_dsh["local_system_time_zone"],
+                platform=test_dsh["platform"],
                 ip=StringTools.hash_string(sessions_manager.get_test_client_ip()),
-            ).get("session_id")
+            )
 
-            refresh_token: str = jwt_parser.generate_refresh_token(user_id, session_id)
+            session_id: str = session_create_result["session_id"]
+
+            refresh_token: str = jwt_parser.generate_refresh_token(user_id, session_id, refresh_token="", make_old_refresh_token_used=False)
 
             access_token: str = jwt_parser.generate_access_token(
                 user_id=user_id,
@@ -82,7 +120,7 @@ def get_user_router(db: DataBase) -> APIRouter:
     @router.post("/login", status_code=201, response_model=LoginResponse)
     async def login(
         data: LoginRequest,
-        session = Depends(db.get_session)
+        session: "AsyncSession" = Depends(db.get_session)
         ) -> LoginResponse:
 
         try:
@@ -97,16 +135,18 @@ def get_user_router(db: DataBase) -> APIRouter:
             user_id: str = str(user.id)
             
             test_dsh: Dict[str, str] = sessions_manager.get_test_dsh()
-            session_id: str = sessions_manager.create_session(
-                user_id,
-                user_agent=test_dsh.get("user_agent"),
-                client_id=test_dsh.get("client_id"),
-                local_system_time_zone=test_dsh.get("local_system_time_zone"),
-                platform=test_dsh.get("platform"),
+            session_create_result = sessions_manager.create_session(
+                user_id=user_id,
+                user_agent=test_dsh["user_agent"], 
+                client_id=test_dsh["client_id"],
+                local_system_time_zone=test_dsh["local_system_time_zone"],
+                platform=test_dsh["platform"],
                 ip=StringTools.hash_string(sessions_manager.get_test_client_ip()),
-            ).get("session_id")
+            )
 
-            refresh_token: str = jwt_parser.generate_refresh_token(user_id, session_id)
+            session_id: str = session_create_result["session_id"]
+
+            refresh_token: str = jwt_parser.generate_refresh_token(user_id, session_id, refresh_token="", make_old_refresh_token_used=False)
 
             access_token: str = jwt_parser.generate_access_token(
                 user_id=user_id,
@@ -132,7 +172,7 @@ def get_user_router(db: DataBase) -> APIRouter:
     @router.post("/logout", status_code=200, response_model=LogoutResponse)
     async def logout(
         credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
-        session = Depends(db.get_session),) -> LogoutResponse:
+        session: "AsyncSession"= Depends(db.get_session),) -> LogoutResponse:
         """
         Logout: Accepts the access_token, extracts the sid from the token, and deletes the corresponding session.
         """
@@ -168,7 +208,7 @@ def get_user_router(db: DataBase) -> APIRouter:
     async def ban_user(
         data: BanRequest,
         credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
-        session = Depends(db.get_session),
+        session: "AsyncSession" = Depends(db.get_session),
         ) -> BanResponse:
         """
         The user's ban. Requires valid access from the administrator.
@@ -179,7 +219,7 @@ def get_user_router(db: DataBase) -> APIRouter:
                 raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin rights required.")
                 
             try:
-                ban_user_id: uuid.UUID = data.ban_user_id if isinstance(data.ban_user_id, uuid.UUID) else uuid.UUID(str(data.ban_user_id))
+                ban_user_id: str = data.ban_user_id if isinstance(data.ban_user_id, str) else str(data.ban_user_id)
             except Exception:
                 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid ban_user_id.")
 
@@ -200,7 +240,7 @@ def get_user_router(db: DataBase) -> APIRouter:
     async def unban_user(
         data: UnbanRequest,
         credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
-        session = Depends(db.get_session),
+        session: "AsyncSession" = Depends(db.get_session),
         ) -> UnbanResponse:
         """
         The user's unban. Requires valid access from the administrator.
@@ -211,7 +251,7 @@ def get_user_router(db: DataBase) -> APIRouter:
                 raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin rights required.")
 
             try:
-                unban_user_id: uuid.UUID = data.unban_user_id if isinstance(data.unban_user_id, uuid.UUID) else uuid.UUID(str(data.unban_user_id))
+                unban_user_id: str = data.unban_user_id if isinstance(data.unban_user_id, str) else str(data.unban_user_id)
             except Exception:
                 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid ban_user_id.")
 
@@ -231,10 +271,13 @@ def get_user_router(db: DataBase) -> APIRouter:
     async def upload_avatar(
         data: UploadFile = File(...),
         credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
-        session = Depends(db.get_session),
-    ):
+        session: "AsyncSession" = Depends(db.get_session),
+    ) -> UploadAvatarResponse:
         payload: Dict[str, Any] = await base_router.get_payload_or_401(credentials)
-        sub = payload.get("sub")
+        sub_val = payload.get("sub")
+        if not isinstance(sub_val, str) or not sub_val:
+            raise HTTPException(status_code=400, detail="Invalid user id in token")
+        sub: str = sub_val
 
         user: User = await session.get(
                 User, sub
@@ -249,7 +292,8 @@ def get_user_router(db: DataBase) -> APIRouter:
 
         result = media_processor.process_image(raw, data.content_type)
 
-        key = s3_service.make_key(sub, data.filename, result.meta.mime)
+        filename: str = data.filename or "avatar" 
+        key = s3_service.make_key(sub, filename, result.meta.mime)
 
         try:
             await s3_service.upload_bytes(
@@ -299,5 +343,5 @@ def get_user_router(db: DataBase) -> APIRouter:
         )
 
 
-    return router
 
+    return router

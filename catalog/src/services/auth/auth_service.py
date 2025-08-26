@@ -16,8 +16,8 @@ class AuthService:
         self.db = db
         self.jwt_parser = JwtParser()
         self.sessions_manager = SessionsManager()
-        self.access_token_expire_minutes = self.jwt_parser.access_token_expire_minutes
-        self.refresh_token_expire_days = self.jwt_parser.refresh_token_expire_days
+        self.access_token_expire_minutes: int = self.jwt_parser.access_token_expire_minutes
+        self.refresh_token_expire_days: int = self.jwt_parser.refresh_token_expire_days
 
 
     async def authenticate_user(self, identifier: str, password: str) -> User:

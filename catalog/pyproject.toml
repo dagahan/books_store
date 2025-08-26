@@ -25,6 +25,12 @@ dependencies = [
     "pillow==11.3.0",
     "python-multipart==0.0.20",
 "bs_models @ git+https://github.com/dagahan/bs_models.git",
+]
+
+
+[project.optional-dependencies]
+dev = [
+    "ruff==0.12.10",
     "mypy>=1.17.1",
 ]
 
@@ -70,10 +76,6 @@ ignore_missing_imports = true
 ignore_missing_imports = true
 [mypy-fastapi]
 ignore_missing_imports = true
-
-
-[jwt]
-private_key = "certs/jwt-private.pem"
 
 
 [db]

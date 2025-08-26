@@ -30,7 +30,7 @@ class SessionsManager:
         return min(remaining, self._days_to_seconds(self.session_inactive_days))
 
 
-    def create_session(self, user_id: uuid.UUID, *,
+    def create_session(self, user_id: str, *,
         user_agent: str, client_id: str,
         local_system_time_zone: str, platform: str, ip: str,
     ) -> dict[str, str]:
@@ -48,7 +48,7 @@ class SessionsManager:
         ish: str = StringTools.hash_string(ip)
 
         model = Session(
-            sub=str(user_id),
+            sub=user_id,
             iat=now_time_stamp,
             mtl=mtl_time_stamp,
             dsh=dsh,

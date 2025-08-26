@@ -1,21 +1,22 @@
 import hashlib
 from io import BytesIO
-from typing import Optional, Dict, Any, Tuple
-from PIL import Image as PILImage
+
+from bs_schemas import ImageProcessResult, ImageProcessMeta  # type: ignore[import-untyped]
 from fastapi import HTTPException
+from PIL import Image as PILImage
 from starlette import status
+
 from src.core.config import ConfigLoader
 from src.core.utils import EnvTools
-from bs_schemas import *
 
 
 class MediaProcessor:
     def __init__(self) -> None:
         self.config = ConfigLoader()
-        self.max_image_size_bytes = int(EnvTools.load_env_var("s3_max_image_size_mb")) * 1024 * 1024
+        self.max_image_size_bytes: int = int(EnvTools.required_load_env_var("s3_max_image_size_mb")) * 1024 * 1024
 
 
-    def process_image(self, raw: bytes, content_type: Optional[str]) -> ImageProcessResult:
+    def process_image(self, raw: bytes, content_type: str | None) -> ImageProcessResult:
         self._validate_raw(raw)
         img = self._open_image(raw)
         fmt = self._choose_format(content_type, img.format)
@@ -47,7 +48,7 @@ class MediaProcessor:
             raise HTTPException(status_code=400, detail=f"Invalid image: {e}")
 
 
-    def _choose_format(self, content_type: Optional[str], orig_fmt: Optional[str]) -> str:
+    def _choose_format(self, content_type: str | None, orig_fmt: str | None) -> str:
         """
         Returns the final encoding format: 'JPEG' or the original one.
         JPEG is the default, if nothing is clear.
@@ -66,7 +67,7 @@ class MediaProcessor:
         return "JPEG"
 
 
-    def _encode_without_exif(self, img: PILImage.Image, fmt: str) -> Tuple[bytes, str]:
+    def _encode_without_exif(self, img: PILImage.Image, fmt: str) -> tuple[bytes, str]:
         """
         Saving without EXIF. For JPEG → RGB, optimization.
         Returns (bytes, mime).

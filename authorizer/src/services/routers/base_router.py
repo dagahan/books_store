@@ -1,60 +1,39 @@
-from typing import Any, Iterable, List, Optional, Union, Dict, Tuple
+from typing import Any, Optional, Dict
 from uuid import UUID as PythonUUID
-import uuid
 
-from loguru import logger
-import colorama
-
-from fastapi import APIRouter, HTTPException, Response, status, Depends
-
+from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from src.core.utils import ValidatingTools
-from src.core.config import ConfigLoader
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from fastapi import UploadFile, File
+from sqlalchemy.orm import noload
+from fastapi.security import HTTPAuthorizationCredentials
 
+from src.core.utils import ValidatingTools
 from src.services.db.database import DataBase
 from src.services.jwt.jwt_parser import JwtParser
-from src.services.auth.auth_service import AuthService
-from src.services.media_process.media_processor import MediaProcessor
-from bs_schemas import *
-from bs_models import *
-from src.services.s3.s3 import S3Client
-from src.services.auth.sessions_manager import *
-from src.services.auth.auth_service import *
-from src.services.jwt import *
+
+from bs_models import User  # type: ignore[import-untyped]
+from bs_schemas import UserDTO, UserRole  # type: ignore[import-untyped]
 
 
 class BaseRouter:
-    def __init__(self, db: DataBase):
+    def __init__(self, db: DataBase) -> None:
         self.db = db
         self.jwt_parser = JwtParser()
 
 
     async def find_user_by_any_credential(self, session: AsyncSession, user_data: Any) -> User:
-        if user_data.user_name:
-            query = select(
-                User
-            ).where(User.user_name == user_data.user_name)
-
-        elif user_data.email:
-            query = select(
-                User
-            ).where(User.email == user_data.email)
-
-        elif user_data.phone:
-            query = select(
-                User
-            ).where(User.phone == user_data.phone)
-
+        if getattr(user_data, "user_name", None):
+            query = select(User).where(User.user_name == user_data.user_name)
+        elif getattr(user_data, "email", None):
+            query = select(User).where(User.email == user_data.email)
+        elif getattr(user_data, "phone", None):
+            query = select(User).where(User.phone == user_data.phone)
         else:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
                                 detail="Login (user_name, email or phone) is required")
 
         result = await session.execute(query)
         user = result.scalar_one_or_none()
-
         if not user:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
 
@@ -62,7 +41,6 @@ class BaseRouter:
         if dto is None:
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                                 detail="User record failed schema validation")
-
         return user
 
 
@@ -74,23 +52,16 @@ class BaseRouter:
         exclude_id: Optional[PythonUUID | str] = None,
     ) -> bool:
         model = attribute.class_
-        if not hasattr(model, '__tablename__'):
+        if not hasattr(model, "__tablename__"):
             raise ValueError("Attribute must be a SQLAlchemy column property")
-        
-        query = (
-            select
-            (
-                model
-            )
-            .where(attribute == value)
-        )
-        
+
+        query = select(model).where(attribute == value)
         if exclude_id is not None:
             query = query.where(model.id != exclude_id)
-        
+
         result = await session.execute(query)
         return len(result.scalars().all()) == 0
-    
+
 
     def http_ex_attribute_is_not_unique(self, attribute: Any, entity_name: str = "Entity") -> HTTPException:
         return HTTPException(
@@ -105,30 +76,25 @@ class BaseRouter:
         return self.jwt_parser.decode_token(credentials.credentials)
 
 
-    async def check_user_role(self,
+    async def check_user_role(
+        self,
         credentials: HTTPAuthorizationCredentials,
         session: AsyncSession,
     ) -> UserRole:
         payload: Dict[str, Any] = await self.get_payload_or_401(credentials)
-        sub: Optional[str] = payload.get("sub")
+        sub = payload.get("sub")
         if not sub:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Access token missing sub.")
 
-        async with self.db.session_ctx() as session:
-            result = await session.execute(
-                            select(User)
-                            .where(User.id == sub)
-                            .options(noload("*"))
-                        )
-            user: User = result.scalar_one_or_none()
+        async with self.db.session_ctx() as db_session:
+            result = await db_session.execute(
+                select(User).where(User.id == sub).options(noload("*"))
+            )
+            user: User | None = result.scalar_one_or_none()
             if not user:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail="User not found."
                 )
 
-        try:
-            return user.role
-        except Exception:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid user.")
-
+        return user.role

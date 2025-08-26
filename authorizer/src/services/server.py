@@ -27,7 +27,7 @@ class Server:
         )
 
     
-    async def run_server(self):
+    async def run_server(self) -> None:
         server = uvicorn.Server(self.uvicorn_config)
         await self.data_base.init_alchemy_engine()
         await self._register_routes()
@@ -37,14 +37,10 @@ class Server:
         await server.serve()
 
 
-    async def _register_routes(self):
+    async def _register_routes(self) -> None:
         '''
         register all of endpoints.
         '''
-        @self.app.get("/")
-        def home():
-            return {"message": f"Hello! This is {self.config.get("project", "name")} service!"}
-
         self.app.include_router(get_user_router(self.data_base))
         self.app.include_router(get_token_router(self.data_base))
             
