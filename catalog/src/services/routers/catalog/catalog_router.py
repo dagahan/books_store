@@ -1,9 +1,31 @@
+from __future__ import annotations
 from typing import TYPE_CHECKING
 
-from ..base_router import *
+from fastapi import APIRouter, Depends
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi.security import HTTPBearer
+
+from src.core.utils import ValidatingTools
+from src.services.routers.base_router import BaseRouter
+from src.services.jwt.jwt_parser import JwtParser
+from src.services.auth.sessions_manager import SessionsManager
+from src.services.auth.auth_service import AuthService
+from src.services.media_process.media_processor import MediaProcessor
+from src.services.s3.s3 import S3Client
+
+from bs_models import ProductType  # type: ignore[import-untyped]
+from bs_schemas import (  # type: ignore[import-untyped]
+    ProductTypesByCategoriesRequest,
+    ProductTypesByCategoriesResponse,
+    CategoriesResponse,
+    ProductTypeDTO,
+    ProductTypeCategory,
+)
 
 if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession
+    from src.services.db.database import DataBase
 
 
 def get_catalog_router(db: DataBase) -> APIRouter:
@@ -18,7 +40,7 @@ def get_catalog_router(db: DataBase) -> APIRouter:
 
     
     @router.get("/product_types_by_categories", response_model=ProductTypesByCategoriesResponse)
-    async def list_product_types(
+    async def product_types_by_categories(
         data: ProductTypesByCategoriesRequest,
         # credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
         session: "AsyncSession" = Depends(db.get_session),
@@ -41,7 +63,7 @@ def get_catalog_router(db: DataBase) -> APIRouter:
 
 
     @router.get("/categories", response_model=CategoriesResponse)
-    async def list_product_types(
+    async def categories(
         # credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
         session: "AsyncSession" = Depends(db.get_session),
     ) -> CategoriesResponse:

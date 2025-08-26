@@ -1,11 +1,11 @@
-
-from bs_models import User
+from bs_models import User # type: ignore[import-untyped]
 from fastapi import HTTPException, status
-from jose import JWTError
+from jose import JWTError  # type: ignore[import-untyped]
 from loguru import logger
 from sqlalchemy import select
 from sqlalchemy.orm import noload
 
+from typing import Any
 from src.services.auth.sessions_manager import SessionsManager
 from src.services.db.database import DataBase
 from src.services.jwt.jwt_parser import JwtParser
@@ -47,7 +47,7 @@ class AuthService:
     
     async def validate_access_token(self, access_token: str) -> bool:
         try:
-            payload = self.jwt_parser.validate_token(access_token)
+            payload: dict[str, Any] = self.jwt_parser.decode_token(access_token)
 
             user_id = payload.get("sub")
             session_id = payload.get("sid")
@@ -59,19 +59,21 @@ class AuthService:
                     detail="Invalid token payload"
                 )
 
-            if not self.sessions_manager.is_session_exists(session_id):
+            session = self.sessions_manager.get_session(str(session_id))
+            if session is None:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail="Session expired"
                 )
 
-            session = self.sessions_manager.get_session(session_id)
-            session_user_id = session.sub
-            if session_user_id and str(session_user_id) != str(user_id):
+            session_user_id = getattr(session, "sub", None)
+            if session_user_id is not None and str(session_user_id) != str(user_id):
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
                     detail="Token does not match session user"
                 )
+
+            return True
 
             return True
 

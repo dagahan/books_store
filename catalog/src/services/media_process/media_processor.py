@@ -1,7 +1,7 @@
 import hashlib
 from io import BytesIO
 
-from bs_schemas import *
+from bs_schemas import ImageProcessResult, ImageProcessMeta  # type: ignore[import-untyped]
 from fastapi import HTTPException
 from PIL import Image as PILImage
 from starlette import status
@@ -13,7 +13,7 @@ from src.core.utils import EnvTools
 class MediaProcessor:
     def __init__(self) -> None:
         self.config = ConfigLoader()
-        self.max_image_size_bytes = int(EnvTools.load_env_var("s3_max_image_size_mb")) * 1024 * 1024
+        self.max_image_size_bytes: int = int(EnvTools.required_load_env_var("s3_max_image_size_mb")) * 1024 * 1024
 
 
     def process_image(self, raw: bytes, content_type: str | None) -> ImageProcessResult:

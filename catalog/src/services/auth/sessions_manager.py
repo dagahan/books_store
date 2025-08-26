@@ -13,9 +13,9 @@ from src.services.valkey.valkey import ValkeyService
 
 class SessionsManager:
     def __init__(self) -> None:
-        self.session_max_life_days = int(EnvTools.load_env_var("SESSIONS_MAX_LIFE_DAYS"))
-        self.session_inactive_days = int(EnvTools.load_env_var("SESSIONS_INACTIVE_DAYS"))
-        self.valkey_service = ValkeyService()
+        self.session_max_life_days: int = int(EnvTools.required_load_env_var("SESSIONS_MAX_LIFE_DAYS"))
+        self.session_inactive_days: int = int(EnvTools.required_load_env_var("SESSIONS_INACTIVE_DAYS"))
+        self.valkey_service: Any = ValkeyService()
 
 
     def _days_to_seconds(self, days: int) -> int:
@@ -95,14 +95,14 @@ class SessionsManager:
         self.valkey_service.valkey.delete(session_key)
 
     
-    def delete_all_sessions_for_user(self, user_id: uuid.UUID | str) -> int:
+    def delete_all_sessions_for_user(self, user_id: str) -> int:
         """
         Deletes all sessions (Session keys:{sid}) belonging to the user user_id.
         Returns the amount of deleted sessions.
         """
-        uid: str = str(user_id)
+        uid: str = user_id
         deleted_total: int = 0
-        cursor: int | str = 0
+        cursor: int = 0
         pattern: str = "Session:*"
 
         while True:
@@ -123,7 +123,7 @@ class SessionsManager:
                     results = pipe_del.execute()
                     deleted_total += sum(1 for r in results if r)
 
-            if cursor == 0 or cursor == "0":
+            if cursor == 0:
                 break
 
         if deleted_total:

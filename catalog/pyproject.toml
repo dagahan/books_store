@@ -24,7 +24,7 @@ dependencies = [
     "aiobotocore==2.24.1",
     "pillow==11.3.0",
     "python-multipart==0.0.20",
-    "bs_models @ git+https://github.com/dagahan/bs_models.git",
+"bs_models @ git+https://github.com/dagahan/bs_models.git",
     "mypy>=1.17.1",
 ]
 
